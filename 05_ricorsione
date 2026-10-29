@@ -1,0 +1,830 @@
+ESAME LUGLIO 2024-->
+ procedura ricorsiva che identifichi il cammino più lungo che minimizza la somma dei pesi del percorso, e con le seguenti caratteristiche:
+I. Un nodo può essere attraversato una sola volta.
+II. Gli archi possono essere attraversati solo nella loro direzione di percorrenza
+III. Nel cammino, non ci possono essere due geni consecutivi con lo stesso valore del campo Essential
+IV. Si possono attraversare solo archi di peso crescente (ovvero ogni nuovo arco percorso deve avere
+peso del precedente).
+Nello specifico, la procedura dovrà identificare il cammino più lungo ammissibile. In seconda istanza, tra i diversi
+cammini di pari lunghezza, dovrà prediligere il percorso a peso totale minimo.
+b. Si stampino:
+I. Il numero di nodi nel cammino trovato
+II. Il peso totale del cammino trovato
+III. La sequenza di nodi attraversati
+
+ def getCamminoMigliore(self):
+        migliore = []
+        pesoMigliore = float("inf")
+
+        for nodo in self._grafo.nodes:
+            visitati = [nodo]
+            cammino, peso = self.ricorsione( nodo, visitati, 0, -float("inf") )
+
+            if len(cammino) > len(migliore):
+                migliore = cammino
+                pesoMigliore = peso
+
+            elif len(cammino) == len(migliore):
+                if peso < pesoMigliore:
+                    migliore = cammino
+                    pesoMigliore = peso
+        return migliore, pesoMigliore
+
+    def ricorsione(self, nodo, cammino, pesoTotale, pesoPrecedente):
+        migliore = cammino[:]
+        pesoMigliore = pesoTotale
+
+        for vicino in self._grafo.successors(nodo):
+            # Il nodo non deve essere già stato visitato
+            if vicino in cammino:
+                continue
+            # Essential deve essere diverso dal nodo precedente
+            if vicino.Essential == nodo.Essential:
+                continue
+
+            pesoArco = self._grafo[nodo][vicino]["weight"]
+            # I pesi devono essere crescenti o uguali
+            if pesoArco < pesoPrecedente:
+                continue
+
+            nuovoCammino = cammino + [vicino]
+            nuovoPeso = pesoTotale + pesoArco
+
+            camminoTrovato, pesoTrovato = self.ricorsione(  vicino, nuovoCammino, nuovoPeso,pesoArco  )
+
+            if len(camminoTrovato) > len(migliore):
+                migliore = camminoTrovato
+                pesoMigliore = pesoTrovato
+
+            elif len(camminoTrovato) == len(migliore):
+                if pesoTrovato < pesoMigliore:
+                    migliore = camminoTrovato
+                    pesoMigliore = pesoTrovato
+
+        return migliore, pesoMigliore
+
+#CONTROLLER
+ def handle_path(self, e):
+        n_nodes, _ = self._model.getGraphDetails()
+        if n_nodes == 0:
+            self._view.txt_result2.controls.append(ft.Text("Prima di cercare il percorso, devi creare il grafo!", color="red"))
+            self._view.update_page()
+            return
+
+        cammino, peso = self._model.getCamminoMigliore()
+
+        self._view.txt_result2.controls.append( ft.Text(f"Numero di nodi: {len(cammino)}"))
+        self._view.txt_result2.controls.append(  ft.Text(f"Peso totale: {peso}"))
+
+        for nodo in cammino:
+            self._view.txt_result2.controls.append(
+                ft.Text( f"{nodo.GeneID} - {nodo.Function} " f"| Essential: {nodo.Essential}"
+                )
+            )
+        self._view.update_page()
+
+1 APPELLO LUGLIO 2024
+Dato il grafo costruito al punto precedente, si vuole identificare un cammino sul grafo costituito da avvistamenti di
+durata sempre crescente (strettamente crescente) che massimizzi un punteggio composto dai seguenti termini:
+• +100 punti per ogni avvistamento nel cammino
+• +200 punti per ogni avvistamento del cammino che è occorso nello stesso mese dell’avvistamento
+precedente (ovviamente non applicabile al primo avvistamento del cammino, dato che non ha un
+avvistamento che lo precede).
+Inoltre, il cammino può contenere al massimo 3 avvistamenti dello stesso mese.
+
+    def getCamminoMassimo(self):
+        punteggio_massimo = 0
+        cammino_massimo = []
+        for nodo in self._grafo.nodes:
+            mesi = {nodo.datetime.month: 1}
+            punteggio, cammino = self.ricorsione( nodo, [nodo], mesi, 100  )
+            if punteggio > punteggio_massimo:
+                punteggio_massimo = punteggio
+                cammino_massimo = cammino
+        return punteggio_massimo, cammino_massimo
+
+    def ricorsione(self, nodo, cammino, mesi, punteggio):
+        punteggio_massimo = punteggio
+        cammino_massimo = cammino.copy()
+
+        for vicino in self._grafo.successors(nodo):
+            # La durata deve essere strettamente crescente
+            if vicino.duration <= nodo.duration:
+                continue
+            mese = vicino.datetime.month
+            # Massimo 3 avvistamenti per mese
+            if mesi.get(mese, 0) >= 3:
+                continue
+            # Punteggio del nuovo avvistamento
+            nuovo_punteggio = punteggio + 100
+            # Bonus se ha lo stesso mese del precedente
+            if mese == nodo.datetime.month:
+                nuovo_punteggio += 200
+            # Aggiorno il conteggio dei mesi
+            nuovi_mesi = mesi.copy()
+            nuovi_mesi[mese] = nuovi_mesi.get(mese, 0) + 1
+            nuovo_cammino = cammino + [vicino]
+            # Continuo la ricorsione
+            punteggio, cammino_trovato = self.ricorsione(
+                vicino, nuovo_cammino, nuovi_mesi, nuovo_punteggio )
+            if punteggio > punteggio_massimo:
+                punteggio_massimo = punteggio
+                cammino_massimo = cammino_trovato
+
+        return punteggio_massimo, cammino_massimo
+
+  SETTEMBRE 2024 -->
+  si vuole identificare un cammino che ottimizzi gli avvistamenti fatti in
+relazione alla distanza percorsa. Questo viene modellato come un punteggio da massimizzare definito come segue:
+• Il punteggio è dato dalla somma totale dei pesi degli archi DIVISO la distanza totale percorsa nel
+cammino. La distanza nel percorrere un arco può essere calcolata usando la funzione distance_HV
+fornita già implementata nella classe State.
+Il cammino deve inoltre rispettare i seguenti vincoli:
+• Da un nodo, ci si può spostare solamente verso un nodo con densità di popolazione strettamente
+crescente. La densità di popolazione è calcolata come Population/Area (Colonne del DB)
+a. Alla pressione del bottone “Calcola percorso” avviare l’algoritmo di ricerca
+b. Stampare a video il punteggio totale del percorso ottenuto, con la lista di stati attraversati, stampando per
+ognuno anche la sua densità di popolazione.
+
+    def calcolaDensita(self, stato):
+        return stato.Population / stato.Area
+
+    def getPercorsoMigliore(self):
+        self.bestPath = []
+        self.bestScore = 0
+
+        for nodo in self._grafo.nodes():
+            self.ricorsionePercorso(nodo, [nodo], 0, 0)
+
+        return self.bestPath, self.bestScore
+
+    def ricorsionePercorso(self, nodo, percorso, sommaPesi, distanzaTotale):
+        if distanzaTotale > 0:
+            punteggio = sommaPesi / distanzaTotale
+
+            if punteggio > self.bestScore:
+                self.bestScore = punteggio
+                self.bestPath = percorso.copy()
+
+        for vicino in self._grafo.neighbors(nodo):
+            if self.calcolaDensita(vicino) > self.calcolaDensita(nodo):
+                if vicino not in percorso:
+                    peso = self._grafo[nodo][vicino]["weight"]
+                    distanza = nodo.distance_HV(vicino)
+
+                    self.ricorsionePercorso(vicino, percorso + [vicino],sommaPesi + peso, distanzaTotale + distanza  )
+          #CONTROLLER
+              def handle_path(self, e):
+        n_nodes, _ = self._model.getGraphDetails()
+        if n_nodes == 0:
+            self._view.txt_result2.controls.append(
+                ft.Text("Prima di cercare il percorso, devi creare il grafo!", color="red"))
+            self._view.update_page()
+            return
+
+        percorso, punteggio = self._model.getPercorsoMigliore()
+        if not percorso:
+            self._view.create_alert("Nessun percorso trovato.")
+            return
+        self._view.txt_result2.controls.append(
+            ft.Text(f"Punteggio migliore: {punteggio:.4f}", color="green") )
+
+        for i, stato in enumerate(percorso, start=1):
+            densita = self._model.calcolaDensita(stato)
+
+            self._view.txt_result2.controls.append(
+                ft.Text(f"{i}) {stato.Name} - Densità: {densita:.2f}")  )
+        self._view.update_page()
+
+
+ GENNAIO 2025-->
+ Si implementi una procedura ricorsiva che sia in grado di identificare una lista di nodi appartenenti al grafo di
+cui al punto 1, tale per cui siano verificate le seguenti richieste:
+I. I nodi devono essere presentati nella lista ordinati in senso crescente di GeneID
+II. I nodi devono essere o tutti “Essenziali” oppure tutti “Non-Essenziali”. Vanno esclusi i nodi per i quali
+l’essenzialità non è nota (ovvero in cui il campo è “?”)
+III. La soluzione proposta deve massimizzare il numero di elementi nella lista.
+IV. A parità di lunghezza della soluzione, il numero di componenti connesse del sottografo ottenuto
+considerando solo i nodi del set trovato deve essere minimo (hint: usare il metodo
+Graph.subgraph())
+b. Si stampi la sequenza di cromosomi di lunghezza massima così ottenuta.
+
+aggiungi!
+
+
+GIUGNO 2025--> K E M
+Partendo dal grafo costruito nel punto precedente, si vuole identificare il “sotto-campionato più emozionante” di K
+gare che statisticamente presentano il maggior numero di “imprevisti”. Ai fini di questo punto, si considerino come
+circuiti validi solamente i circuiti che appartengono alla componente connessa identificata nel punto precedente e
+03FYZ – Tecniche di programmazione
+nei quali si è corso almeno M volte nel range di anni selezionato. I valori di K ed M sono forniti dall’utente tramite
+appositi textFields (“Soglia” e “Num di Edizioni” rispettivamente) .
+Si definisca come indice di “imprevedibilità” I di una specifica gara il seguente valore numerico:
+I = 1- nP/nPtot
+dove nP rappresenta il numero di piloti che hanno correttamente tagliato il traguardo in tutte le edizioni corse sul
+circuito selezionato (ovvero lo stesso valore calcolato al punto precedente come componente del peso degli archi),
+mentre nPtot rappresenta la totalità dei piloti che risultano iscritti alle varie gare (ovvero, la somma delle lunghezze
+delle liste indipendentemente dalla presenza del valore Null come piazzamento).
+Per valutare l’indice complessivo di imprevedibilità di una lista di circuiti si può utilizzare la somma degli indici I delle
+varie gare inserite nella lista.
+
+    def _indiceEmozionante(self, team):
+        if team.gare_totali == 0:
+            return 0
+        return 1 - team.gare_completate / team.piloti_totali
+
+    def getGruppoTeamChampion(self, K, M):
+        self._best_path = []
+        self._best_score = -1
+
+        components = list(nx.connected_components(self._grafo))
+        if len(components) == 0:
+            return None, 0
+
+        # Individuo la componente connessa maggiore
+        largest = max(components, key=len)
+        candidati = []
+        for team in largest:
+            # Conto gli anni distinti in cui il team ha partecipato
+            anni = set()
+            for anno, pilota, time in team.risultati_per_anno:
+                anni.add(anno)
+            if len(anni) >= M:
+                candidati.append(team)
+
+        # Verifico che ci siano almeno K team validi
+        if len(candidati) < K:
+            return None, 0
+        # Il percorso parziale  NONparte con il nodo selezionato
+        parziale = []
+        self._ricorsione(parziale, parziale, 0, K, 0)
+
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, candidati, parziale, start, K, score):
+        # Caso terminale: ho scelto K team
+        if len(parziale) == K:
+            if score > self._best_score:
+                self._best_score = score
+                self._best_path = list(parziale)
+            return
+
+        # Provo ad aggiungere un team
+        for i in range(start, len(candidati)):
+            circuito = candidati[i]
+
+            indice = self._indiceEmozionante(circuito)
+            parziale.append(circuito)
+
+            self._ricorsione(candidati, parziale, i + 1, K, score + indice)
+
+            # Tolgo il team e provo un'altra combinazione
+            parziale.pop()
+
+
+CONTROLLER:
+ def handleCercaDreamChampionship(self, e):
+        self._view._txt_result.controls.clear()
+        k = self._view._txtInSoglia.value
+        # qui dovremmo fare i solti controlli sulla validità
+
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red"))
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "La soglia deve essere un intero positivo.", color="red")
+            return
+
+        m = self._view._txtInNumDiEdizioni.value
+        # qui dovremmo fare i solti controlli sulla validità
+        try:
+            mInt = int(m)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red"))
+            self._view.update_page()
+            return
+        if mInt <= 0:
+            self._view.create_alert(
+                "Il numero di edizioni deve essere un intero positivo.", color="red")
+            return
+
+        listTeam, bestScore = self._model.getGruppoTeamChampion(kInt, mInt)
+
+        if listTeam is None:
+            self._view._txt_result.controls.clear()
+            self._view._txt_result.controls.append(ft.Text(
+                f"Non ci sono abbastanza comoonenti connesse per trovare K team", color="red"))
+            return
+        self._view._txt_result.controls.append(ft.Text(
+            f"Gruppo dei {kInt} team più sfortunati "
+            f"(indice complessivo: {bestScore:.3f})", color="green"))
+        # Stampo le informazioni di ogni regista
+        for team in listTeam:
+            indice = self._model._indiceSfortuna(team)
+            self._view._txt_result.controls.append(
+                ft.Text(
+                    f"{team.name}: indice di sfortuna = {indice:.3f}" ) )
+        self._view.update_page()
+
+  LUGLIO 2025 --> START -END , K, NO VISITA LO STESSO NODO
+  Dato il grafo del punto precedente, si inseriscano nei dropdown “Start Product” ed “End Product” tutti i nodi
+presenti nel grafo, e si implementi un algoritmo ricorsivo che identifichi un cammino ottimo tale per cui:
+- Il cammino parti dal nodo identificato come Start Product e termini nel nodo identificato come End Product;
+- La lunghezza del cammino sia pari a Lun, valore numerico fornito dall’utente nel campo “Lunghezza
+cammino”;
+- Il cammino attraversi gli archi rispettando i versi;
+- Un nodo non può essere attraversato più volte;
+- La somma dei pesi degli archi deve essere massima.
+03FYZ – Tecniche di programmazione
+Identificato il percorso, se ne stampino i nodi e la somma dei pesi.
+
+ def getGruppoProdotti(self, k, start_node, end_node):
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        # Il percorso parziale parte dal nodo selezionato
+        parziale = [start_node]
+
+        self._ricorsione(parziale, k, end_node, 0)
+
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, k, end_node, score):
+        ultimo = parziale[-1]
+
+        # Caso terminale: abbiamo raggiunto la lunghezza richiesta
+        if len(parziale) == k:
+            if ultimo == end_node:
+                if score > self._best_score:
+                    self._best_score = score
+                    self._best_path = list(parziale)
+            return
+
+        # Se arriviamo alla destinazione troppo presto, ci fermiamo
+        if ultimo == end_node:
+            return
+
+        # Esploro i vicini raggiungibili con un arco uscente
+        for vicino in self._grafo.successors(ultimo):
+
+            # Non posso visitare due volte lo stesso nodo
+            if vicino not in parziale:
+                # Recupero il peso dell'arco
+                peso = self._grafo[ultimo][vicino]["weight"]
+
+                # Aggiungo il vicino al percorso
+                parziale.append(vicino)
+                # Continuo la ricorsione aggiornando il punteggio
+                self._ricorsione(parziale, k, end_node, score + peso, peso)
+                # Tolgo il vicino per provare un'altra possibilità
+                parziale.pop()
+
+    def getProdottoById(self, idP):
+        return self._idMapR[int(idP)]
+
+  #CONTROLLER (non stampa bene)
+      def handleCercaCammino(self, e):
+        self._view._txt_result.controls.clear()
+
+        if self._model.get_num_nodes() == 0 or self._model.get_num_edges() is None:
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+
+        start = self._model.getProdottoById(self._view._ddProdStart.value)
+        end = self._model.getProdottoById(self._view._ddProdEnd.value)
+        # qui dovremmo fare i solti controlli sulla validità
+
+        if start is None or end is None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire i nodi iniziali e finali  per procedere!", color="red")
+            )
+            self._view.update_page()
+            return
+        k = self._view._txtInLun.value
+        # qui dovremmo fare i solti controlli sulla validità
+
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red")
+            )
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "N deve essere un intero positivo.", color="red")
+            return
+
+        gruppo, punteggio = self._model.getGruppoProdotti(kInt, start, end)
+        print("Prodotto iniziale:", start)
+        print("Prodotto finale:", end)
+        print("Lunghezza richiesta:", kInt)
+        print("Percorso trovato:", gruppo)
+        print("Punteggio:", punteggio)
+
+        if len(gruppo) < kInt:
+            self._view._txt_result.controls.append(
+                ft.Text("Non esiste una selezione valida di K prodotti."))
+
+        for prodotto in gruppo:
+            self._view._txt_result.controls.append(
+                ft.Text(
+                    f"{prodotto.product_name} - "
+                    f" {prodotto.model_year}")
+            )
+        self._view.update_page()
+
+  SETTEMBRE 2025--> MINIMIZ E K, + MEMBRO + ANZIANO E + GIOVANE
+  Si vuole valutare la coesione generazionale della coorte di piloti considerata. Dato un valore K intero fornito
+dall’utente, l’obiettivo del programma è di identificare il range di età anagrafica più piccolo per il quale sia possibile
+identificare un set di K piloti distinti tale per cui:
+a) ciascun pilota faccia parte di una componente connessa distinta, ovvero i piloti non possono essere stati
+compagni di squadra;
+b) la differenza fra la data di nascita del pilota più “anziano” e quello più “giovane” della coorte selezionata sia
+minimo;
+Si stampino il range di date di nascita identificato come minimo, e la lista di piloti.
+
+    def getGruppoPiloti(self,  k):
+        self._best_group = []
+        self._best_score = float("inf")
+
+        self._creaMappaComponenti()
+
+        piloti= list(self._grafo.nodes)
+        self._ricorsione([], piloti, k, 0)
+        # Il percorso parziale parte con il nodo selezionato
+       # parziale = [start_node]
+       # self._ricorsione(parziale, k)
+
+        return self._best_group, self._best_score
+
+    def _ricorsione(self, parziale,piloti, k,pos):
+        # CASO BASE: ho trovato K piloti
+        if len(parziale) == k:
+            score = self._score(parziale)
+           # score = sum(len(a.movies) for a in parziale)
+
+            if score <self._best_score:
+                self._best_score = score
+                self._best_group = list(parziale)
+            return
+
+        # POTATURA: non ci sono abbastanza piloti per completare il gruppo
+        # Se non restano abbastanza costruttori, termino
+        if len(piloti) - pos < k - len(parziale):
+            return
+        # PROVO I PILOTI A PARTIRE DALLA POSIZIONE pos
+        # Provo i costruttori a partire dalla posizione pos
+        for i in range(pos, len(piloti)):
+            candidato = piloti[i]
+
+
+            # Controllo che non ci sia già un costruttore
+            # della stessa componente nella soluzione parziale
+            stessa_componente = False
+
+            for costruttore in parziale:
+                if (self._mappaComponenti[candidato]
+                        == self._mappaComponenti[costruttore]):
+                    stessa_componente = True
+                    break
+
+            if stessa_componente:
+                continue
+            # AGGIUNGO IL PILOTA
+            parziale.append(candidato)
+            # Chiamata ricorsiva passando il nuovo arco come riferimento
+            self._ricorsione(parziale, piloti, k, i + 1)
+            # BACKTRACKING: annullo l'ultima mossa
+            parziale.pop()
+
+    def _score(self, parziale):
+        date_nascita = []
+
+        for pilota in parziale:
+            dob = pilota.dob
+            if dob is None:
+                return float("inf")
+            date_nascita.append(dob)
+
+        data_piu_vecchia = min(date_nascita)
+        data_piu_recente = max(date_nascita)
+        scarto = (data_piu_recente - data_piu_vecchia).days
+
+        return scarto
+
+    def _creaMappaComponenti(self):
+        self._mappaComponenti = {}
+
+        grafoNonOrientato = self._grafo.to_undirected()
+        componenti = list(nx.connected_components(grafoNonOrientato))
+
+        for i, componente in enumerate(componenti):
+            for costruttore in componente:
+                self._mappaComponenti[costruttore] = i
+ CONTROLLER :
+
+    def handleCerca(self, e):
+        self._view._txt_result.controls.clear()
+
+        if self._model.get_num_nodes() == 0 or self._model.get_num_edges() is None:
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+        k = self._view._txtInK.value
+        # qui dovremmo fare i solti controlli sulla validità
+
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red")
+            )
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "N deve essere un intero positivo.", color="red")
+            return
+
+        gruppo, scarto = self._model.getGruppoPiloti(kInt)
+        if len(gruppo) < kInt:
+            self._view._txt_result.controls.append(
+                ft.Text("Non esiste una selezione valida di K piloti.", color="red"))
+        else:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Scarto minimo: {scarto} giorni"))
+
+            for costruttore in gruppo:
+                self._view._txt_result.controls.append(
+                    ft.Text(
+                        f"{costruttore.surname} - "
+                        f"Veterano nato il {costruttore.dob}"))
+
+            piu_anziano = min(gruppo, key=lambda c: c.dob)
+
+            piu_giovane = max(gruppo, key=lambda c: c.dob)
+
+            self._view._txt_result.controls.append(
+                ft.Text(f"Veterano più anziano: {piu_anziano.surname}"))
+            self._view._txt_result.controls.append(
+                ft.Text(f"Veterano più giovane: {piu_giovane.surname}"))
+        self._view.update_page()
+
+OTTOBRE 2025 --> RICHIESTE CON DFS
+si implementi una
+procedura ricorsiva che calcoli un percorso di peso massimo. Il vertice di partenza è quello selezionato nel punto 1.c
+e il peso degli archi nel percorso deve essere strettamente decrescente.
+N.B.: un vertice può entrare una volta sola nel percorso
+     def getNodo(self, order_id):
+        return self._idMapR[int(order_id)]
+
+    def getPercorsoRic(self, start_node):
+        print("START NODE:", start_node)
+        print("TIPO START:", type(start_node))
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        # Il percorso parziale parte dal nodo selezionato
+        parziale = [start_node]
+
+        self._ricorsione(parziale, 0,None)
+        print("BEST PATH:", self._best_path)
+        print("TIPO PRIMO NODO:", type(self._best_path[0]))
+        return self._best_path, self._best_score
+
+
+    def _ricorsione(self, parziale,  score,ultimo_peso):
+        ultimo = parziale[-1]
+
+        # Caso terminale: abbiamo raggiunto la lunghezza richiesta
+        #if len(parziale) == k:
+           # if ultimo == end_node:
+        if score > self._best_score:
+            self._best_score = score
+            self._best_path = list(parziale)
+
+        # Se arriviamo alla destinazione troppo presto, ci fermiamo
+      #  if ultimo == end_node:
+            #return
+
+        # Esploro i vicini raggiungibili con un arco uscente
+        for vicino in self._grafo.successors(ultimo):
+
+            # Non posso visitare due volte lo stesso nodo
+            if vicino not in parziale:
+                # Recupero il peso dell'arco
+                peso = self._grafo[ultimo][vicino]["weight"]
+
+                # I pesi devono essere strettamente decrescenti
+                if ultimo_peso is None or peso < ultimo_peso:
+
+                    # Aggiungo il vicino al percorso
+                    parziale.append(vicino)
+                    # Continuo la ricorsione aggiornando il punteggio
+                    self._ricorsione(parziale, score + peso, peso)
+                    # Tolgo il vicino per provare un'altra possibilità
+                    parziale.pop()
+ CONTROLLER
+  def handleRicorsione(self, e):
+
+        # Verifico che sia stato selezionato un nodo
+        order_id_val = self._view._ddNode.value
+        if not order_id_val:
+            self._view._txt_result.controls.append(
+                ft.Text("Selezionare un ordine di partenza.", color="red"))
+            self._view.update_page()
+            return
+
+        # Recupero l'oggetto Order dal suo ID
+        source_node = self._model.getNodo(order_id_val)
+
+        # Calcolo il percorso di peso massimo
+        percorso, peso = self._model.getPercorsoRic(source_node)
+
+        # Visualizzo il risultato
+        self._view._txt_result.controls.append(
+            ft.Text("Percorso di peso massimo:", weight="bold", color="orange"))
+
+        for i in range(len(percorso)):
+            self._view._txt_result.controls.append(
+                ft.Text(f"Ordine {percorso[i].order_id} - " f"Data: {percorso[i].order_date}"))
+
+            if i < len(percorso) - 1:
+                vicino = percorso[i + 1]
+                peso_arco = self._model._grafo[percorso[i]][vicino]["weight"]
+                self._view._txt_result.controls.append(
+                    ft.Text(f"    ↓ peso: {peso_arco}") )
+        peso = self._model.pesoMigliore
+        self._view._txt_result.controls.append(
+            ft.Text(f"Peso totale: {peso}", weight="bold", color="orange"))
+        self._view.update_page()
+
+GENNAIO 2026 -->
+Si vuole valutare la diversità anagrafica dei "veterani" (piloti più anziani) nelle diverse scuderie. Dato un valore K
+intero fornito dall'utente, l'obiettivo del programma è di identificare un set di K costruttori distinti tale per cui:
+a) Ciascun costruttore faccia parte di una componente connessa distinta, ovvero i costruttori selezionati non
+devono aver mai condiviso piloti tra loro;
+b) La differenza fra la data di nascita del pilota più anziano che ha corso per ciascun costruttore sia minima. In
+altre parole, per ogni costruttore si identifichi il "veterano" (il pilota con data di nascita più vecchia che ha
+corso per quel team nel periodo selezionato), e si minimizzi il range di età tra questi veterani.
+SUGGERIMENTO: Per risolvere questo punto, una strategia è quella di scrivere un metodo del DAO che interroghi il
+db per ottenere la data di nascita (campo dob della tabella drivers) del pilota più anziano che ha corso per una certa
+scuderia, e di utilizzare tale metodo per riempire il campo “oldest_driver_dob” della classe Constructor proposta nel
+codice fornito.
+Si stampino la lista dei K costruttori selezionati, lo scarto di età in giorni, il costruttore con il veterano più giovane e
+quello con il veterano più anziano.
+Nella realizzazione del codice, si lavori
+
+
+    def getGruppoPiloti(self,  k):
+        self._best_path = []
+        self._best_score = float("inf")
+
+        self._creaMappaComponenti()
+
+        costruttori = list(self._grafo.nodes)
+        self._ricorsione([], costruttori, k, 0)
+        # Il percorso parziale parte con il nodo selezionato
+       # parziale = [start_node]
+       # self._ricorsione(parziale, k)
+
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale,costruttori, k,pos):
+
+        if len(parziale) == k:
+            score = self._score(parziale)
+           # score = sum(len(a.movies) for a in parziale)
+
+            if score <self._best_score:
+                self._best_score = score
+                self._best_group = list(parziale)
+            return
+
+        # Se non restano abbastanza costruttori, termino
+        if len(costruttori) - pos < k - len(parziale):
+            return
+
+        # Provo i costruttori a partire dalla posizione pos
+        for i in range(pos, len(costruttori)):
+            candidato = costruttori[i]
+
+
+            # Controllo che non ci sia già un costruttore
+            # della stessa componente nella soluzione parziale
+            stessa_componente = False
+
+            for costruttore in parziale:
+                if (self._mappaComponenti[candidato]
+                        == self._mappaComponenti[costruttore]):
+                    stessa_componente = True
+                    break
+
+            if stessa_componente:
+                continue
+
+            parziale.append(candidato)
+            # Chiamata ricorsiva passando il nuovo arco come riferimento
+            self._ricorsione(parziale, costruttori, k, i + 1)
+            # BACKTRACKING: annullo l'ultima mossa
+            parziale.pop()
+
+    def _score(self, parziale):
+        date_nascita = []
+
+        for costruttore in parziale:
+            dob = costruttore.oldest_driver_dob
+            if dob is None:
+                return float("inf")
+            date_nascita.append(dob)
+
+        data_piu_vecchia = min(date_nascita)
+        data_piu_recente = max(date_nascita)
+        scarto = (data_piu_recente - data_piu_vecchia).days
+
+        return scarto
+
+    def _creaMappaComponenti(self):
+        self._mappaComponenti = {}
+
+        grafoNonOrientato = self._grafo.to_undirected()
+        componenti = list(nx.connected_components(grafoNonOrientato))
+
+        for i, componente in enumerate(componenti):
+            for costruttore in componente:
+                self._mappaComponenti[costruttore] = i
+
+    @staticmethod
+    def getOldestDriverDob(constructorId, anno1, anno2):
+        conn = DBConnect.get_connection()
+        cursor = conn.cursor()
+        query = """
+            SELECT MIN(d.dob) AS oldest_dob
+            FROM results r, drivers d, races ra
+            WHERE r.driverId = d.driverId
+              AND r.raceId = ra.raceId
+              AND r.constructorId = %s
+              AND ra.year BETWEEN %s AND %s
+              AND d.dob IS NOT NULL
+        """
+        cursor.execute(query, (constructorId, anno1, anno2))
+        result = cursor.fetchone()
+        cursor.close()
+        if result is None:
+            return None
+        conn.close()
+
+    def handleCerca(self, e):
+        self._view._txt_result.controls.clear()
+        if self._model.get_num_nodes() == 0 or self._model.get_num_edges() is None:
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+        k = self._view._txtInK.value
+        # qui dovremmo fare i solti controlli sulla validità
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red") )
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "N deve essere un intero positivo.", color="red")
+            return
+        gruppo, scarto = self._model.getGruppoPiloti(kInt)
+
+        if len(gruppo) < kInt:
+            self._view._txt_result.controls.append(
+                ft.Text("Non esiste una selezione valida di K costruttori.") )
+        else:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Scarto minimo: {scarto} giorni")   )
+
+            for costruttore in gruppo:
+                self._view._txt_result.controls.append(
+                    ft.Text( f"{costruttore.name} - "
+                        f"Veterano nato il {costruttore.oldest_driver_dob}" )  )
+
+            piu_anziano = min(  gruppo, key=lambda c: c.oldest_driver_dob )
+            piu_giovane = max( gruppo, key=lambda c: c.oldest_driver_dob )
+            self._view._txt_result.controls.append(
+                ft.Text(f"Veterano più anziano: {piu_anziano.name}")  )
+
+            self._view._txt_result.controls.append(
+                ft.Text(f"Veterano più giovane: {piu_giovane.name}")   )
+        self._view.update_page()
+
+
+
+
+
+
+
