@@ -1,0 +1,86 @@
+1) I 5 nodi col maggiore numero di archi uscenti col numero di archi uscenti ed il peso complessivo di
+questi archi (la somma dei loro pesi). I nodi devono essere stampati in ordine decrescente per
+numero di archi uscenti.
+    def getTop5Archi(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+       # archi = self._grafo.edges(data=True)
+        risultati = []
+
+        for p in self._grafo.nodes:
+            uscenti = self._grafo.out_edges(p, data=True)
+            #entranti = self._grafo.in_edges(p, data=True)
+            numero = len(uscenti)
+            peso = sum(d["weight"] for _, _, d in uscenti) #- \
+                  #   sum(d["weight"] for _, _, d in uscenti)
+
+           # risultati.append((p, valore))
+            risultati.append((p, numero, peso))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        return risultati[:5]
+
+     CONTROLLER:
+      # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top5 = self._model.getTop5Archi()
+        # self._view._txt_result.controls.clear()
+        self._view.txt_result1.controls.append(ft.Text(f" 5 Archi di peso maggiore ", color="green"))
+
+        # self._view._txt_result.controls.append(ft.Text(f"{arco[0]}-->{arco[1]} (peso: {arco[2]["weight"]})"))
+        for i, (nodo, numero,peso) in enumerate(top5, start=1):
+            self._view.txt_result1.controls.append(
+                ft.Text(f"{i}) Nodo: {nodo.GeneID} -   {nodo.Function} | Ess.: {nodo.Essential},"
+                        f" Chrom.: {nodo.Chromosome}| Archi uscenti: {numero} | Peso complessivo: {peso}")
+            )
+        self._view.update_page()
+
+2)Stampare i dettagli dei cinque nodi con grado maggiore e dei cinque archi con peso maggiore.
+         def getTop5Nodi(self):
+        nodi = self._grafo.nodes() #(data=True) SE METTO QUESTO RESTITUISCE UN DIZIONARIO CON I DATI PER OGNI NODO
+        top5=sorted( nodi, key=lambda x: self._grafo.degree(x),  reverse=True )[:5]
+        return [(nodo, self._grafo.degree(nodo)) for nodo in top5]
+
+3) Stampare il numero di componenti debolmente connesse. Inoltre, identificare la componente connessa di
+dimensione maggiore, e stamparne i nodi – includendo il dettaglio della città in cui è avvenuto
+l’avvistamento e la data.
+
+ def getConnessaInfo(self):
+      #  components = list(nx.connected_components(self._grafo))
+      #PERCHè DEVE ESSERE DEBOLMENTE CONNESSA!!
+        components = list(nx.weakly_connected_components(self._grafo))
+        if len(components) == 0:
+           return 0, set(), []
+
+        # Tengo solo le componenti con più di un nodo
+        #components = [c for c in components if len(c) > 1]
+        largest = max(components, key=len)
+      #  pesi = {}
+       # for nodo in largest:
+          #  minPeso = None
+          #  for vicino in self._grafo.neighbors(nodo):
+             #   peso = self._grafo[nodo][vicino]["weight"]
+             #   if minPeso is None or peso < minPeso:
+               # []    minPeso = peso
+            #pesi[nodo] = minPeso
+       # ordered_nodes_pesi = sorted(largest, key=lambda n: pesi[n], reverse=True)
+        # Ordino per dimensione decrescente
+        components = sorted(components, key=len, reverse=True)
+        # details = [(n, pesi[n]) for n in ordered_nodes_pesi]
+        return components , len(components), largest #, details
+
+     CONTROLLER
+     components, numero, largest = self._model.getConnessaInfo()
+
+        self._view.txt_result1.controls.append(
+            ft.Text(f"Numero componenti debolmente connesse: {numero}") )
+
+        self._view.txt_result1.controls.append(
+            ft.Text(f"Dimensione componente maggiore: {len(largest)}"))
+
+        self._view.txt_result1.controls.append(
+            ft.Text("Nodi della componente maggiore:")  )
+
+        for nodo in largest:
+            self._view.txt_result1.controls.append(
+                ft.Text( f"ID: {nodo.id} - Città: {nodo.city} - Data: {nodo.datetime}")    )
+
+        self._view.update_page()
