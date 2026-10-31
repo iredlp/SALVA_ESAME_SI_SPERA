@@ -48,7 +48,7 @@ l’avvistamento e la data.
       #PERCHè DEVE ESSERE DEBOLMENTE CONNESSA!!
         components = list(nx.weakly_connected_components(self._grafo))
         if len(components) == 0:
-           return 0, set(), []
+           return [], 0, set()
 
         # Tengo solo le componenti con più di un nodo
         #components = [c for c in components if len(c) > 1]
@@ -84,3 +84,66 @@ l’avvistamento e la data.
                 ft.Text( f"ID: {nodo.id} - Città: {nodo.city} - Data: {nodo.datetime}")    )
 
         self._view.update_page()
+
+4) si stampino tutte le componenti connesse del grafo di dimensione
+maggiore di 1, in ordine decrescente di dimensione
+    def getConnessaInfo(self):
+        components = list(nx.connected_components(self._grafo))
+        #if len(components) == 0:
+         #   return 0, set(), []
+
+        # Tengo solo le componenti con più di un nodo
+        components = [c for c in components if len(c) > 1]
+        largest = max(components, key=len)
+        pesi = {}
+        for nodo in largest:
+            minPeso = None
+            for vicino in self._grafo.neighbors(nodo):
+                peso = self._grafo[nodo][vicino]["weight"]
+                if minPeso is None or peso < minPeso:
+                    minPeso = peso
+            pesi[nodo] = minPeso
+        ordered_nodes_pesi = sorted(largest, key=lambda n: pesi[n], reverse=True)
+
+        # Ordino per dimensione decrescente
+        components = sorted(components, key=len, reverse=True)
+       # details = [(n, pesi[n]) for n in ordered_nodes_pesi]
+        return components #len(components), largest #, details
+
+     CONTROLLER
+     components = self._model.getConnessaInfo()
+
+       # self._view._txt_result.controls.append(
+          #  ft.Text(f"Il grafo ha  {numero} componenti connesse\n", color="orange"))
+
+
+        self._view.txt_result.controls.append(
+            ft.Text(f"La componenti connessa  \n", color="green"))
+
+        for componente in components:
+            self._view.txt_result.controls.append(
+                ft.Text(f"Dimensione componente: {len(componente)}")
+            )
+            for nodo in componente:
+                self._view.txt_result.controls.append(
+                    ft.Text(f"{nodo.GeneID}")
+                )
+           # self._view.txt_result.controls.append(ft.Text(""))
+        self._view.update_page()
+
+ 5) il film con il maggior numero di archi uscenti (e il relativo numero di archi uscenti);
+     def getFilmMaxArchiUscenti(self):
+        nodoMax = max(self._grafo.nodes, key=lambda n: self._grafo.out_degree(n))
+
+        numeroArchi = self._grafo.out_degree(nodoMax)
+
+        return nodoMax, numeroArchi
+
+     CONTROLLER:
+     nodoMax, numeroArchi = self._model.getFilmMaxArchiUscenti()
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Film con più archi uscenti: {nodoMax.title}") )
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Numero archi uscenti: {numeroArchi}"))

@@ -209,7 +209,80 @@ considerando solo i nodi del set trovato deve essere minimo (hint: usare il meto
 Graph.subgraph())
 b. Si stampi la sequenza di cromosomi di lunghezza massima così ottenuta.
 
-aggiungi!
+  def getGruppo(self):
+        self._best_path = []
+        self._best_score = float("inf")
+
+        # Prendo i nodi e li ordino per GeneID crescente
+        nodi = list(self._grafo.nodes)
+        nodi = sorted(nodi, key=lambda n: n.GeneID)
+
+        # Elimino i nodi con essenzialità sconosciuta
+        nodi_validi = []
+        for n in nodi:
+            if n.Essenziale != "?":
+                nodi_validi.append(n)
+
+        # Avvio la ricorsione
+        self._ricorsione([], nodi_validi, 0, None)
+       # self._ricorsione([], geni, 0)
+        # Il percorso parziale parte con il nodo selezionato
+        # parziale = [start_node]
+        # self._ricorsione(parziale, k)
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, nodi, pos, tipo):
+        # VALUTO LA SOLUZIONE PARZIALE
+        if len(parziale) > 0:
+            sottografo = self._grafo.subgraph(parziale)
+            num_componenti = nx.number_connected_components(sottografo)
+
+            # La soluzione è migliore se:
+            # 1. ha più nodi
+            # 2. a parità di nodi ha meno componenti
+            if (len(parziale) > len(self._best_path) or
+                    (len(parziale) == len(self._best_path) and
+                     num_componenti < self._best_score)):
+                self._best_path = list(parziale)
+                self._best_score = num_componenti
+
+        # CASO TERMINALE
+        if pos == len(nodi):
+            return
+        # POTATURA
+        if len(parziale) + (len(nodi) - pos) < len(self._best_path):
+            return
+        # CONSIDERO IL NODO CORRENTE
+        candidato = nodi[pos]
+
+        # Controllo che sia dello stesso tipo dei precedenti
+        if tipo is None or candidato.Essenziale == tipo:
+            parziale.append(candidato)
+
+            # Chiamata ricorsiva: considero il nodo
+            self._ricorsione(parziale, nodi, pos + 1,candidato.Essenziale)
+            # BACKTRACKING
+            parziale.pop()
+        # Chiamata ricorsiva: NON considero il nodo
+        self._ricorsione(parziale, nodi, pos + 1, tipo)
+CONTROLLER
+    def handle_path(self, e):
+        self._view.txt_result.controls.clear()
+        gruppo, num_componenti = self._model.getGruppo()
+        geni = DAO.get_all_genes()
+        cromosomi = {}
+        for g in geni:
+            cromosomi[g.GeneID] = g.Chromosome
+
+        sequenza = []
+        for nodo in gruppo:
+            sequenza.append(cromosomi[nodo.GeneID])
+
+         self._view.txt_result.controls.append(
+            ft.Text(f"Sequenza di cromosomi: \n {sequenza}", color="green"))
+
+        print("Sequenza di cromosomi:", sequenza)
+
 
 
 GIUGNO 2025--> K E M
