@@ -1,0 +1,598 @@
+import flet as ft
+ì
+
+#1) I 5 nodi col maggiore numero di archi uscenti col numero di archi uscenti ed il peso complessivo di
+#questi archi (la somma dei loro pesi). I nodi devono essere stampati in ordine decrescente per
+#numero di archi uscenti.
+    def getTop5Archi(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+       # archi = self._grafo.edges(data=True)
+        risultati = []
+
+        for p in self._grafo.nodes:
+            uscenti = self._grafo.out_edges(p, data=True)
+            #entranti = self._grafo.in_edges(p, data=True)
+            numero = len(uscenti)
+            peso = sum(d["weight"] for _, _, d in uscenti) #- \
+                  #   sum(d["weight"] for _, _, d in uscenti)
+
+           # risultati.append((p, valore))
+            risultati.append((p, numero, peso))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        return risultati[:5]
+
+   #  CONTROLLER:
+      # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top5 = self._model.getTop5Archi()
+        # self._view._txt_result.controls.clear()
+        self._view.txt_result1.controls.append(ft.Text(f" 5 Archi di peso maggiore ", color="green"))
+
+        # self._view._txt_result.controls.append(ft.Text(f"{arco[0]}-->{arco[1]} (peso: {arco[2]["weight"]})"))
+        for i, (nodo, numero,peso) in enumerate(top5, start=1):
+            self._view.txt_result1.controls.append(
+                ft.Text(f"{i}) Nodo: {nodo.GeneID} -   {nodo.Function} | Ess.: {nodo.Essential},"
+                        f" Chrom.: {nodo.Chromosome}| Archi uscenti: {numero} | Peso complessivo: {peso}")
+            )
+        self._view.update_page()
+
+#2)Stampare i dettagli dei cinque nodi con grado maggiore e dei cinque archi con peso maggiore.
+         def getTop5Nodi(self):
+        nodi = self._grafo.nodes() #(data=True) SE METTO QUESTO RESTITUISCE UN DIZIONARIO CON I DATI PER OGNI NODO
+        top5=sorted( nodi, key=lambda x: self._grafo.degree(x),  reverse=True )[:5]
+        return [(nodo, self._grafo.degree(nodo)) for nodo in top5]
+
+#3) Stampare il numero di componenti debolmente connesse. Inoltre, identificare la componente connessa di
+#dimensione maggiore, e stamparne i nodi – includendo il dettaglio della città in cui è avvenuto
+#l’avvistamento e la data.
+
+ def getConnessaInfo(self):
+      #  components = list(nx.connected_components(self._grafo))
+      #PERCHè DEVE ESSERE DEBOLMENTE CONNESSA!!
+        components = list(nx.weakly_connected_components(self._grafo))
+        if len(components) == 0:
+           return [], 0, set()
+
+        # Tengo solo le componenti con più di un nodo
+        #components = [c for c in components if len(c) > 1]
+        largest = max(components, key=len)
+      #  pesi = {}
+       # for nodo in largest:
+          #  minPeso = None
+          #  for vicino in self._grafo.neighbors(nodo):
+             #   peso = self._grafo[nodo][vicino]["weight"]
+             #   if minPeso is None or peso < minPeso:
+               # []    minPeso = peso
+            #pesi[nodo] = minPeso
+       # ordered_nodes_pesi = sorted(largest, key=lambda n: pesi[n], reverse=True)
+        # Ordino per dimensione decrescente
+        components = sorted(components, key=len, reverse=True)
+        # details = [(n, pesi[n]) for n in ordered_nodes_pesi]
+        return components , len(components), largest #, details
+
+   #  CONTROLLER
+     components, numero, largest = self._model.getConnessaInfo()
+
+        self._view.txt_result1.controls.append(
+            ft.Text(f"Numero componenti debolmente connesse: {numero}") )
+
+        self._view.txt_result1.controls.append(
+            ft.Text(f"Dimensione componente maggiore: {len(largest)}"))
+
+        self._view.txt_result1.controls.append(
+            ft.Text("Nodi della componente maggiore:")  )
+
+        for nodo in largest:
+            self._view.txt_result1.controls.append(
+                ft.Text( f"ID: {nodo.id} - Città: {nodo.city} - Data: {nodo.datetime}")    )
+
+        self._view.update_page()
+
+#4) si stampino tutte le componenti connesse del grafo di dimensione
+#maggiore di 1, in ordine decrescente di dimensione
+    def getConnessaInfo(self):
+        components = list(nx.connected_components(self._grafo))
+        #if len(components) == 0:
+         #   return 0, set(), []
+
+        # Tengo solo le componenti con più di un nodo
+        components = [c for c in components if len(c) > 1]
+        largest = max(components, key=len)
+        pesi = {}
+        for nodo in largest:
+            minPeso = None
+            for vicino in self._grafo.neighbors(nodo):
+                peso = self._grafo[nodo][vicino]["weight"]
+                if minPeso is None or peso < minPeso:
+                    minPeso = peso
+            pesi[nodo] = minPeso
+        ordered_nodes_pesi = sorted(largest, key=lambda n: pesi[n], reverse=True)
+
+        # Ordino per dimensione decrescente
+        components = sorted(components, key=len, reverse=True)
+       # details = [(n, pesi[n]) for n in ordered_nodes_pesi]
+        return components #len(components), largest #, details
+
+    # CONTROLLER
+     components = self._model.getConnessaInfo()
+
+       # self._view._txt_result.controls.append(
+          #  ft.Text(f"Il grafo ha  {numero} componenti connesse\n", color="orange"))
+
+
+        self._view.txt_result.controls.append(
+            ft.Text(f"La componenti connessa  \n", color="green"))
+
+        for componente in components:
+            self._view.txt_result.controls.append(
+                ft.Text(f"Dimensione componente: {len(componente)}")
+            )
+            for nodo in componente:
+                self._view.txt_result.controls.append(
+                    ft.Text(f"{nodo.GeneID}")
+                )
+           # self._view.txt_result.controls.append(ft.Text(""))
+        self._view.update_page()
+
+ #5) il film con il maggior numero di archi uscenti (e il relativo numero di archi uscenti);
+     def getFilmMaxArchiUscenti(self):
+        nodoMax = max(self._grafo.nodes, key=lambda n: self._grafo.out_degree(n))
+
+        numeroArchi = self._grafo.out_degree(nodoMax)
+
+        return nodoMax, numeroArchi
+
+    # CONTROLLER:
+     nodoMax, numeroArchi = self._model.getFilmMaxArchiUscenti()
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Film con più archi uscenti: {nodoMax.title}") )
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Numero archi uscenti: {numeroArchi}"))
+
+#6) Costruito il grafo, l’applicazione visualizza il numero di vertici e archi e l’artista con maggiore influenza.
+#L’influenza di un artista è calcolata come: peso archi uscenti − peso archi entranti
+
+     def getTop5ArchiInfluenz(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+        # archi = self._grafo.edges(data=True)
+        risultati = []
+
+        for p in self._grafo.nodes:
+            uscenti = self._grafo.out_edges(p, data=True)
+            entranti = self._grafo.in_edges(p, data=True)
+            numero = len(uscenti)
+            peso = sum(d["weight"] for _, _, d in uscenti)   - \
+               sum(d["weight"] for _, _, d in entranti)
+
+            risultati.append((p, peso))
+            #risultati.append((p, numero, peso))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+        if len(risultati) == 0:
+            return None
+
+        return risultati[0]
+
+       #CONTROLLER:
+       top = self._model.getTop5ArchiInfluenz()
+        # self._view._txt_result.controls.clear()
+        self._view._txt_result.controls.append(ft.Text(f"  Arco influenza max: {top}", color="green"))
+
+        self._view.update_page()
+
+# 7)Alla pressione del tasto “Stampa Info”, l’applicazione visualizza:
+#a. l’attore con grado maggiore;
+#b. l’attore con la somma dei pesi degli archi incidenti massima;
+#c. i 5 archi di peso maggiore, in ordine decrescente di peso; in caso di parità, ordinamento alfabetico !!!!
+#sul nome del primo attore e poi del secondo.
+#d. l'attore più giovane tra quelli presenti nel grafo, in base alla data di nascita;
+#e. l'attore più anziano tra quelli presenti nel grafo, in base alla data di nascita.
+
+     # GRADO MAX
+    def getActorMaxDegree(self):
+        if self._grafo.number_of_nodes() == 0:
+            return None
+       # return max(self._grafo.nodes,key=lambda a: self._grafo.degree(a)  )
+        return max(self._grafo.nodes, key=lambda a: (self._grafo.degree(a), a.name))
+
+    def getTopArcoInc(self):
+        # Attore con somma dei pesi incidenti massima
+        risultati = []
+
+        for a in self._grafo.nodes:
+            grado_pesato = self._grafo.degree(a, weight="weight")
+            risultati.append((a, grado_pesato))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        if len(risultati) == 0:
+            return None
+        return risultati[0]
+
+    def getTop5Archi(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+        archi = self._grafo.edges(data=True)
+        return sorted(
+            archi,
+            key=lambda x: (x[2]["weight"] ,x[0].name, x[1].name),
+            reverse=True  )[:5]
+
+        # attore più giovane
+    def getYoungestActor(self):
+        actors = [a for a in self._grafo.nodes if a.date_of_birth is not None]
+        return max(actors, key=lambda a: a.date_of_birth)
+
+        # attore più vecchio
+    def getOldestActor(self):
+        actors = [a for a in self._grafo.nodes if a.date_of_birth is not None]
+        return min(actors, key=lambda a: a.date_of_birth)
+
+   # CONTROLLER:
+        # def handleStampaInfo(self, e):
+        self._view._txt_result.controls.clear()
+
+        # ATTORE CON GRADO MAX
+        actor_degree = self._model.getActorMaxDegree()
+        self._view._txt_result.controls.append(
+            ft.Text(f"Attore con grado maggiore: {actor_degree.name} "
+                    f"(grado: {self._model._grafo.degree(actor_degree)})"))
+
+        # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top = self._model.getTopArcoInc()
+        if top is not None:
+            attore, peso = top
+            self._view._txt_result.controls.append(
+                ft.Text( f"Attore con somma pesi incidenti massima: "
+                    f"{attore.name} (somma: {peso})")
+            )
+      #  self._view._txt_result.controls.append(ft.Text(f" ATTORE somma pesi incidenti massima: {top} ", color="green"))
+
+        top5 = self._model.getTop5Archi()
+        self._view._txt_result.controls.append(ft.Text(f"Archi di peso maggiore", color="green"))
+
+        for i, arco in enumerate(top5, start=1):
+            a1, a2, dati = arco
+            self._view._txt_result.controls.append(ft.Text(
+                f"{i})  {a1.name}  ({a1.id}) -- {a2.name}  ({a2.id} )"
+                f"(film condivisi: {dati['weight']})")
+            )
+        #for arco in top5:
+            #self._view._txt_result.controls.append(ft.Text(f"{arco[0]}-->{arco[1]} (peso: {arco[2]["weight"]})"))
+        self._view._txt_result.controls.append(ft.Text(" "))
+
+        #  Attore più giovane
+        youngest = self._model.getYoungestActor()
+        if youngest is not None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Attore più giovane: {youngest.name} "
+                        f"({youngest.date_of_birth})"))
+        else:
+            self._view._txt_result.controls.append(
+                ft.Text("Nessun attore possiede una data di nascita.")  )
+
+        #  Attore più anziano
+        oldest = self._model.getOldestActor()
+        if oldest is not None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Attore più anziano: {oldest.name} "f"({oldest.date_of_birth})"))
+
+        self._view.update_page()
+
+ #8) Alla pressione del tasto “Stampa Info”, l’applicazione visualizza:
+#a. il regista con grado maggiore (numero di archi);
+#b. il regista con la somma dei pesi degli archi incidenti massima;
+
+        def getActorMaxDegree(self):
+        if self._grafo.number_of_nodes() == 0:
+            return None
+        if self._grafo.number_of_edges() == 0:
+            return None
+        # return max(self._grafo.nodes,key=lambda a: self._grafo.degree(a)  )
+        return max(self._grafo.nodes, key=lambda a: (self._grafo.degree(a), a.name))
+
+    def getTopArcoInc(self):
+        # Attore con somma dei pesi incidenti massima
+        risultati = []
+
+        for a in self._grafo.nodes:
+            grado_pesato = self._grafo.degree(a, weight="weight")
+            risultati.append((a, grado_pesato))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        if len(risultati) == 0:
+            return None
+        return risultati[0]
+
+  ##  CONTROLLER:
+       self._view._txt_result.controls.clear()
+        # ATTORE CON GRADO MAX
+        actor_degree = self._model.getActorMaxDegree()
+        self._view._txt_result.controls.append(
+            ft.Text(f"Regista con grado maggiore: {actor_degree.name} "
+                    f"(grado: {self._model._grafo.degree(actor_degree)})"))
+
+        # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top = self._model.getTopArcoInc()
+        if top is not None:
+            attore, peso = top
+            self._view._txt_result.controls.append(ft.Text(f"Regista con somma pesi incidenti massima: "
+                        f"{attore.name} (somma: {peso})")  )
+
+#9)Identificare la componente connessa di dimensione maggiore, e stamparne tutti i nodi, ordinati in senso
+#decrescente secondo il grado dei nodi.
+        def getConnessaInfo(self):
+        # lo trasformo in non orientato pk richiesto di ignorare
+        grafo_non_orientato = self._grafo.to_undirected()
+        components = list(nx.connected_components(grafo_non_orientato))
+
+        # Se il grafo è vuoto
+        if len(components) == 0:
+            return 0, set(), []
+
+        # components = list(nx.connected_components(self._grafo))  # TROVO LE COMP CONNESSE e ci faccio una lista
+        largest = max(components, key=len)  # trova la + grande
+
+        # b. Film con maggior numero di archi uscenti
+        #film_max_out = max(self._grafo.nodes, key=lambda n: self._grafo.out_degree(n))
+        # relativo numero archi usenti
+        #max_out = self._grafo.out_degree(film_max_out)
+
+        # ORDINO PER  GRADO!!
+        ordered_nodes = sorted(largest, key=lambda n: grafo_non_orientato.degree(n), reverse=True)  # ordine decrescente
+        details = [(n, len(n.list_piloti)) for n in ordered_nodes]
+
+        return len(components), largest, details
+
+   #CONTROLLER:
+    def handleDettagli(self, e):
+        numero, largest, details = self._model.getConnessaInfo()
+        self._view._txt_result.controls.clear()
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Il grafo ha  {numero} componenti connesse\n", color="orange"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore ha dimensione  {len(largest)}\n", color="green"))
+
+        for titolo in largest:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo} "))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore in ordine decrescente \n", color="green"))
+
+        for titolo, numero_piloti in details:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo}: {numero_piloti} piloti"))
+
+        self._view.update_page()
+
+ #10) l’applicazione visualizza il numero di nodi e di archi presenti nel grafo. Alla pressione del tasto
+#Stampa dettagli, il programma dovrà identificare la componente connessa di dimensione maggiore, e stamparne
+#tutti i nodi, ordinati in senso decrescente di peso massimo degli archi incidenti.
+
+        def getConnessaInfo(self):
+        components = list(nx.connected_components(self._grafo))
+        if len(components) == 0:
+            return 0, set(), []
+
+        largest = max(components, key=len)
+        pesi = {}
+        for nodo in largest:
+            maxPeso = None
+
+            for vicino in self._grafo.neighbors(nodo):
+                peso = self._grafo[nodo][vicino]["weight"]
+                if maxPeso is None or peso >maxPeso:
+                    maxPeso = peso
+
+            pesi[nodo] = maxPeso
+        ordered_nodes = sorted(largest, key=lambda n: pesi[n], reverse=True)
+        details = [(n, pesi[n]) for n in ordered_nodes]
+
+        return len(components), largest, details
+     #CONTROLLER:
+      def handlePrintDetails(self, e):
+        numero, largest, details = self._model.getConnessaInfo()
+        self._view._txt_result.controls.clear()
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Il grafo ha  {numero} componenti connesse", color="orange"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore ha dimensione  {len(largest)}\n", color="green"))
+
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore in ordine decrescente \n", color="green"))
+
+        for titolo, numero_gare in details:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo} -- {numero_gare} "))
+
+        self._view.update_page()
+
+# 11)identificare la componente connessa di dimensione maggiore, e stamparne tutti i nodi, ordinati in senso
+#decrescente secondo il grado dei nodi
+
+        def getConnessaInfo(self):
+        # lo trasformo in non orientato pk richiesto di ignorare
+        grafo_non_orientato = self._grafo.to_undirected()
+        components = list(nx.connected_components(grafo_non_orientato))
+
+        # Se il grafo è vuoto
+        if len(components) == 0:
+            return 0, set(), []
+
+        # components = list(nx.connected_components(self._grafo))  # TROVO LE COMP CONNESSE e ci faccio una lista
+        largest = max(components, key=len)  # trova la + grande
+
+        # b. Film con maggior numero di archi uscenti
+        #film_max_out = max(self._grafo.nodes, key=lambda n: self._grafo.out_degree(n))
+        # relativo numero archi usenti
+        #max_out = self._grafo.out_degree(film_max_out)
+
+        # ORDINO PER  GRADO!!
+        ordered_nodes = sorted(largest, key=lambda n: grafo_non_orientato.degree(n), reverse=True)  # ordine decrescente
+        details = [(n, len(n.partecipazioni)) for n in ordered_nodes]
+
+        return len(components), largest, details
+   # CONTROLLER:
+        def handleDettagli(self, e):
+        numero, largest, details = self._model.getConnessaInfo()
+        self._view._txt_result.controls.clear()
+
+        # self._view._txt_result.controls.append(
+        #  ft.Text(f"Il grafo contiene {numero} componenti connesse\n", color="green"))
+        # self._view._txt_result.controls.append(
+        # ft.Text(f"Film con maggior numero archi uscenti: {film_max_out} (archi uscenti: {max_out})\n", color="green"))
+        self._view._txt_result.controls.append(
+            ft.Text(f"Il grafo ha  {numero} componenti connesse\n", color="orange"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore ha dimensione  {len(largest)}\n", color="green"))
+
+        for titolo in largest:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo} "))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore in ordine decrescente \n", color="green"))
+
+        for titolo, numero_squadre in details:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo}: {numero_squadre} piloti"))
+        self._view.update_page()
+
+#12)Tramite il pulsante “Cerca Percorso Massimo”, si visualizzi il cammino più lungo partendo da un nodo (si
+#scelga l’algoritmo di visita del grafo più opportuno fra visita in ampiezza ed in profondità). Il nodo è
+#selezionato dall’apposito menù a tendina. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            def getPercorsoMassimo(self, source_node):  # dfs -- TROVA CAMMINO MAX NELL'ALBEROO, non per forza nel grafo
+        # 1. Costruisce l'albero di visita DFS a partire dal nodo sorgente
+        tree = nx.dfs_tree(self._grafo, source=source_node)
+
+        # Se il nodo non ha archi uscenti, l'albero contiene solo se stesso
+        if len(tree.nodes) <= 1:
+            return []
+
+        # 2. Trova le foglie dell'albero (nodi con grado uscente pari a 0)
+        foglie = [nodo for nodo in tree.nodes if tree.out_degree(nodo) == 0 and nodo != source_node]
+
+        # 3. Trova il cammino più lungo tra la sorgente e tutte le foglie
+        cammino_massimo = []
+        for foglia in foglie:
+            # In un albero orientato esiste esattamente UN solo percorso tra radice e foglia
+            path = nx.shortest_path(tree, source=source_node, target=foglia)
+            if len(path) > len(cammino_massimo):
+                cammino_massimo = path
+
+        return cammino_massimo
+
+         def getNodo(self, order_id):
+        return self._idMapR[int(order_id)]
+#CONTROLLER:
+     # 2. Verifica selezione del nodo
+        order_id_val = self._view._ddNode.value
+        if not order_id_val:
+            self._view._txt_result.controls.append(
+                ft.Text("Selezionare un ordine/nodo di partenza dal menù a tendina.", color="red"))
+            self._view.update_page()
+            return
+
+        # 3. Cerco il cammino più lungo
+        source_node = self._model.getNodo(order_id_val)
+        percorso = self._model.getPercorsoMassimo(source_node)
+
+        # 4. Visualizzo il risultato
+        self._view._txt_result.controls.append(ft.Text("Cammino più lungo:", weight="bold"))
+
+        for ordine in percorso:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Ordine {ordine.order_id} - Data: {ordine.order_date}"))
+
+        self._view._txt_result.controls.append(ft.Text(f"Lunghezza del cammino: {len(percorso) - 1} archi"))
+        self._view.update_page()
+
+#13) Alla pressione del bottone “Aeroporti connessi”, stampare l’elenco degli aeroporti adiacenti a quello selezionato,
+ #in ordine decrescente di numero totale di voli.
+
+          def getViciniOrdinati(self,source):
+        #Restituisce tutti i vicini si source, ordinati per peso dell'arco che collega source al vicino
+        vicini= self._graph.neighbors(source)
+        viciniT=[]
+        for v in vicini:
+            viciniT.append((v,self._graph[source][v]["weight"])) #nodo di partenza | nodo di arrivo |peso
+
+        viciniT.sort(key=lambda x:x[1], reverse=True) #ordino andando a guardare il secondo elemento= quello in posizione 1
+        #REVERSE TRUE le stamoa in senso decrescente
+        return viciniT
+
+       # CONTROLLER:
+            def handleConnessi(self,e):
+        if self._choiceDDPartenza is None:
+            self._view._txtResults.controls.clear()
+            self._view._txtResults.controls.append(ft.Text("Attenzione per usare questo metodo occorre selezionare un aeroporto di partenza"))
+            self._view.update_page()
+            return
+
+        viciniT=self._model.getViciniOrdinati(self._choiceDDPartenza)
+        #self._view._txtResults.controls.clear()
+        for v in viciniT:
+            self._view._txtResults.controls.append(ft.Text(f"{v[0]}-{v[1]}"))
+        self._view.update_page()
+
+ #14) Permettere all’utente di selezionare, attraverso un secondo menu a tendina, una delle squadre esistenti nel
+#grafo, ed alla pressione del bottone “Dettagli” stampare per tale squadra l’elenco delle squadre adiacenti, ed
+#il peso degli archi corrispondenti, in ordine decrescente di peso
+
+     def getVicini(self, source):
+        #cercare tutti i vicini di source
+        vicini=self._grafo.neighbors(source)
+        viciniTuples=[]
+        for v in vicini:
+            #viciniTuples.append(self._grafo[source][v]['weight']) #vicino aggiunto
+            peso = self._grafo[source][v]['weight']
+            viciniTuples.append((v, peso))
+        viciniTuples.sort(key=lambda x: x[1], reverse=True)
+        return viciniTuples
+
+   #  CONTROLLER:
+         def handleDettagli(self, e):
+        if self._choiceTeam is None:
+            self._view._txt_result.controls.clear()
+            self._view._txt_result.controls.append(ft.Text(f"Selezionare un team dal menu ", color="red"))
+            self._view.update_page()
+            return
+        viciniTuple=self._model.getVicini(self._choiceTeam)
+        self._view._txt_result.controls.clear()
+        self._view._txt_result.controls.append(ft.Text(f"Il nodo{self._choiceTeam} ha {len(viciniTuple)} vicini", color="green"))
+        self._view._txt_result.controls.append(ft.Text(f"Di seguito una lista ordinata di vicini", color="green"))
+        for v in viciniTuple:
+            self._view._txt_result.controls.append(ft.Text(f"{v[0]}- peso: {v[1]}", color="green"))
+        self._view.update_page()
+
+#15) Permettere all'utente di selezionare una stazione di partenza.
+#o Visitare il grafo partendo da tale stazione
+#o provare sia con la visita in ampiezza, che in profondità
+#o Stampare l'elenco dei vertici raggiunti nella visita
+
+          def getDFSNodesFromEdges(self, source):
+        archi = nx.dfs_edges(self._grafo, source)
+        nodiDFS = []
+        for u, v in archi:
+            nodiDFS.append(v)
+        return nodiDFS
+
+       # CONTROLLER:
+            def handleCercaRaggiungibili(self,e):
+        if self._fermataPartemza is None:
+            self._view.lst_result.controls.clear()
+            self._view.lst_result.controls.append(
+                ft.Text("Attenzione! Non è stata fatta una scelta di stazione di partenza", color="red"))
+            self._view.update_page()
+            return
+        nodes=self._model.getBFSNodesFromEdges(self._fermataPartemza)
+        self._view.lst_result.controls.clear()
+        self._view.lst_result.controls.append(ft.Text(f"Di seguito i nodi raggiungibili  da {self._fermataPartemza}"))
+        for n in nodes:
+            self._view.lst_result.controls.append(ft.Text(n))
+        self._view.update_page()
+
+
+
+
