@@ -147,3 +147,170 @@ maggiore di 1, in ordine decrescente di dimensione
 
         self._view._txt_result.controls.append(
             ft.Text(f"Numero archi uscenti: {numeroArchi}"))
+
+6) Costruito il grafo, l’applicazione visualizza il numero di vertici e archi e l’artista con maggiore influenza.
+L’influenza di un artista è calcolata come: peso archi uscenti − peso archi entranti
+
+     def getTop5ArchiInfluenz(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+        # archi = self._grafo.edges(data=True)
+        risultati = []
+
+        for p in self._grafo.nodes:
+            uscenti = self._grafo.out_edges(p, data=True)
+            entranti = self._grafo.in_edges(p, data=True)
+            numero = len(uscenti)
+            peso = sum(d["weight"] for _, _, d in uscenti)   - \
+               sum(d["weight"] for _, _, d in entranti)
+
+            risultati.append((p, peso))
+            #risultati.append((p, numero, peso))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+        if len(risultati) == 0:
+            return None
+
+        return risultati[0]
+
+       CONTROLLER:
+       top = self._model.getTop5ArchiInfluenz()
+        # self._view._txt_result.controls.clear()
+        self._view._txt_result.controls.append(ft.Text(f"  Arco influenza max: {top}", color="green"))
+
+        self._view.update_page()
+
+ 7)Alla pressione del tasto “Stampa Info”, l’applicazione visualizza:
+a. l’attore con grado maggiore;
+b. l’attore con la somma dei pesi degli archi incidenti massima;
+c. i 5 archi di peso maggiore, in ordine decrescente di peso; in caso di parità, ordinamento alfabetico !!!!
+sul nome del primo attore e poi del secondo.
+d. l'attore più giovane tra quelli presenti nel grafo, in base alla data di nascita;
+e. l'attore più anziano tra quelli presenti nel grafo, in base alla data di nascita.
+
+     # GRADO MAX
+    def getActorMaxDegree(self):
+        if self._grafo.number_of_nodes() == 0:
+            return None
+       # return max(self._grafo.nodes,key=lambda a: self._grafo.degree(a)  )
+        return max(self._grafo.nodes, key=lambda a: (self._grafo.degree(a), a.name))
+
+    def getTopArcoInc(self):
+        # Attore con somma dei pesi incidenti massima
+        risultati = []
+
+        for a in self._grafo.nodes:
+            grado_pesato = self._grafo.degree(a, weight="weight")
+            risultati.append((a, grado_pesato))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        if len(risultati) == 0:
+            return None
+        return risultati[0]
+
+    def getTop5Archi(self):
+        # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+        archi = self._grafo.edges(data=True)
+        return sorted(
+            archi,
+            key=lambda x: (x[2]["weight"] ,x[0].name, x[1].name),
+            reverse=True  )[:5]
+
+        # attore più giovane
+    def getYoungestActor(self):
+        actors = [a for a in self._grafo.nodes if a.date_of_birth is not None]
+        return max(actors, key=lambda a: a.date_of_birth)
+
+        # attore più vecchio
+    def getOldestActor(self):
+        actors = [a for a in self._grafo.nodes if a.date_of_birth is not None]
+        return min(actors, key=lambda a: a.date_of_birth)
+
+    CONTROLLER:  def handleStampaInfo(self, e):
+        self._view._txt_result.controls.clear()
+
+        # ATTORE CON GRADO MAX
+        actor_degree = self._model.getActorMaxDegree()
+        self._view._txt_result.controls.append(
+            ft.Text(f"Attore con grado maggiore: {actor_degree.name} "
+                    f"(grado: {self._model._grafo.degree(actor_degree)})"))
+
+        # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top = self._model.getTopArcoInc()
+        if top is not None:
+            attore, peso = top
+            self._view._txt_result.controls.append(
+                ft.Text( f"Attore con somma pesi incidenti massima: "
+                    f"{attore.name} (somma: {peso})")
+            )
+      #  self._view._txt_result.controls.append(ft.Text(f" ATTORE somma pesi incidenti massima: {top} ", color="green"))
+
+        top5 = self._model.getTop5Archi()
+        self._view._txt_result.controls.append(ft.Text(f"Archi di peso maggiore", color="green"))
+
+        for i, arco in enumerate(top5, start=1):
+            a1, a2, dati = arco
+            self._view._txt_result.controls.append(ft.Text(
+                f"{i})  {a1.name}  ({a1.id}) -- {a2.name}  ({a2.id} )"
+                f"(film condivisi: {dati['weight']})")
+            )
+        #for arco in top5:
+            #self._view._txt_result.controls.append(ft.Text(f"{arco[0]}-->{arco[1]} (peso: {arco[2]["weight"]})"))
+        self._view._txt_result.controls.append(ft.Text(" "))
+
+        #  Attore più giovane
+        youngest = self._model.getYoungestActor()
+        if youngest is not None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Attore più giovane: {youngest.name} "
+                        f"({youngest.date_of_birth})"))
+        else:
+            self._view._txt_result.controls.append(
+                ft.Text("Nessun attore possiede una data di nascita.")  )
+
+        #  Attore più anziano
+        oldest = self._model.getOldestActor()
+        if oldest is not None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Attore più anziano: {oldest.name} "f"({oldest.date_of_birth})"))
+
+        self._view.update_page()
+
+ 8) Alla pressione del tasto “Stampa Info”, l’applicazione visualizza:
+a. il regista con grado maggiore (numero di archi);
+b. il regista con la somma dei pesi degli archi incidenti massima;
+
+        def getActorMaxDegree(self):
+        if self._grafo.number_of_nodes() == 0:
+            return None
+        if self._grafo.number_of_edges() == 0:
+            return None
+        # return max(self._grafo.nodes,key=lambda a: self._grafo.degree(a)  )
+        return max(self._grafo.nodes, key=lambda a: (self._grafo.degree(a), a.name))
+
+    def getTopArcoInc(self):
+        # Attore con somma dei pesi incidenti massima
+        risultati = []
+
+        for a in self._grafo.nodes:
+            grado_pesato = self._grafo.degree(a, weight="weight")
+            risultati.append((a, grado_pesato))
+        risultati.sort(key=lambda x: x[1], reverse=True)
+
+        if len(risultati) == 0:
+            return None
+        return risultati[0]
+
+    CONTROLLER:
+       self._view._txt_result.controls.clear()
+        # ATTORE CON GRADO MAX
+        actor_degree = self._model.getActorMaxDegree()
+        self._view._txt_result.controls.append(
+            ft.Text(f"Regista con grado maggiore: {actor_degree.name} "
+                    f"(grado: {self._model._grafo.degree(actor_degree)})"))
+
+        # C) 5 ARCHI CON PESO MAGGIORE SORT
+        top = self._model.getTopArcoInc()
+        if top is not None:
+            attore, peso = top
+            self._view._txt_result.controls.append(ft.Text(f"Regista con somma pesi incidenti massima: "
+                        f"{attore.name} (somma: {peso})")  )
+
