@@ -175,7 +175,7 @@ import flet as ft
         return risultati[0]
 
        #CONTROLLER:
-       top = self._model.getTop5ArchiInfluenz()
+        top = self._model.getTop5ArchiInfluenz()
         # self._view._txt_result.controls.clear()
         self._view._txt_result.controls.append(ft.Text(f"  Arco influenza max: {top}", color="green"))
 
@@ -214,8 +214,8 @@ import flet as ft
         archi = self._grafo.edges(data=True)
         return sorted(
             archi,
-            key=lambda x: (x[2]["weight"] ,x[0].name, x[1].name),
-            reverse=True  )[:5]
+            key=lambda x: (x[2]["weight"] ,x[0].name, x[1].name), #INDICANO 0 -nodo partenza e 1 Nodo arrivo
+            reverse=True  )[:5] #SE LASCIO REVERSE=TRUE ORDINO PER OORDINE ALFAB DECRESCENTE!!
 
         # attore più giovane
     def getYoungestActor(self):
@@ -430,8 +430,8 @@ import flet as ft
         #max_out = self._grafo.out_degree(film_max_out)
 
         # ORDINO PER  GRADO!!
-        ordered_nodes = sorted(largest, key=lambda n: grafo_non_orientato.degree(n), reverse=True)  # ordine decrescente
-        details = [(n, len(n.partecipazioni)) for n in ordered_nodes]
+        ordered_nodes = sorted(largest, key=lambda n: grafo_non_orientato.degree(n), )  # ordine decrescente
+        #details = [(n, len(n.partecipazioni)) for n in ordered_nodes]
 
         return len(components), largest, details
    # CONTROLLER:
@@ -591,6 +591,118 @@ import flet as ft
         self._view.lst_result.controls.append(ft.Text(f"Di seguito i nodi raggiungibili  da {self._fermataPartemza}"))
         for n in nodes:
             self._view.lst_result.controls.append(ft.Text(n))
+        self._view.update_page()
+
+#16)l'artista con grado maggiore;
+#• l'artista con somma dei pesi incidenti massima;
+#• i 10 archi di peso maggiore, in ordine decrescente di peso; in caso di parità, ordinare
+#alfabeticamente per nome del primo artista e poi del secondo.
+        def getTopArcoInc(self):
+            # Attore con somma dei pesi incidenti massima
+            risultati = []
+
+            for a in self._grafo.nodes:
+                grado_pesato = self._grafo.degree(a, weight="weight")
+                risultati.append((a, grado_pesato))
+            risultati.sort(key=lambda x: x[1], reverse=True)
+
+            if len(risultati) == 0:
+                return None
+            return risultati[0]
+
+        # GRADO MAX
+        def getActorMaxDegree(self):
+            if self._grafo.number_of_nodes() == 0:
+                return None
+            # return max(self._grafo.nodes,key=lambda a: self._grafo.degree(a)  )
+            return max(self._grafo.nodes, key=lambda a: (self._grafo.degree(a)))  # , a.Name))
+
+        def getTop10Archi(self):
+            # return sorted(self._grafo.edges(data=True), key=lambda x: x[2]["weight"], reverse=True)[:10]
+            archi = self._grafo.edges(data=True)
+            return sorted(
+                archi,
+                key=lambda x: (x[2]["weight"], x[0].Name, x[1].Name),
+                reverse=False)[:10]  # SE LASCIO REVERSE=TRUE ORDINO PER OORDINE ALFAB DECRESCENTE!!
+
+        #CONTROLLER
+
+def handleStampaInfo(self, e):
+    self._view._txt_result.controls.clear()
+
+    # ATTORE CON GRADO MAX
+    artist_degree = self._model.getActorMaxDegree()
+    self._view._txt_result.controls.append(
+        ft.Text(f"ARTISTA con grado maggiore: {artist_degree.Name} "
+                f"(grado: {self._model._grafo.degree(artist_degree)})"))
+
+    # C) 5 ARCHI CON PESO MAGGIORE SORT
+    top = self._model.getTopArcoInc()
+    if top is not None:
+        attore, peso = top
+        self._view._txt_result.controls.append(
+            ft.Text(f"ARTISTA con somma pesi incidenti massima: "
+                    f"{attore.Name} (somma: {peso})")
+        )
+
+    top10 = self._model.getTop10Archi()
+    self._view._txt_result.controls.append(ft.Text(f"Archi di peso maggiore", color="green"))
+
+    for i, arco in enumerate(top10, start=1):
+        a1, a2, dati = arco
+        self._view._txt_result.controls.append(ft.Text(
+            f"{i})  {a1.Name}   -- {a2.Name}  "
+            f"(Playlist condivise: {dati['weight']})")
+        )
+    self._view.update_page()
+
+#17) il numero totale di componenti connesse;
+#• la componente connessa più grande, in termini di numero di album;
+#• per ogni album della componente connessa più grande, il titolo dell'album e il numero di
+#brani contenuti nella sua lista. Stampare i dettagli degli album in ordine alfabetico.
+
+    def getConnessaInfo(self):
+        # lo trasformo in non orientato pk richiesto di ignorare
+        components = list(nx.connected_components(self._grafo))
+        #grafo_non_orientato = self._grafo.to_undirected()
+        #components = list(nx.connected_components(grafo_non_orientato))
+        # Se il grafo è vuoto
+        if len(components) == 0:
+            return 0, set(), []
+
+        # components = list(nx.connected_components(self._grafo))  # TROVO LE COMP CONNESSE e ci faccio una lista
+        largest = max(components, key=len)  # trova la + grande
+        # b. Film con maggior numero di archi uscenti
+        # film_max_out = max(self._grafo.nodes, key=lambda n: self._grafo.out_degree(n))
+        # relativo numero archi usenti
+        # max_out = self._grafo.out_degree(film_max_out)
+
+        # ORDINO PER  GRADO!!
+        ordered_nodes = sorted(largest, key=lambda n:n.Title)  # ordine decrescente
+        details = [(n, len(n.list_brani)) for n in ordered_nodes]
+
+        return len(components), largest, details
+
+    # CONTROLLER
+    def handleStampaInfo(self, e):
+        self._view._txt_result.controls.clear()
+
+        numero, largest, details = self._model.getConnessaInfo()
+        self._view._txt_result.controls.clear()
+
+        # self._view._txt_result.controls.append(
+        # ft.Text(f"Film con maggior numero archi uscenti: {film_max_out} (archi uscenti: {max_out})\n", color="green"))
+        self._view._txt_result.controls.append(
+            ft.Text(f"Il grafo ha  {numero} componenti connesse\n", color="orange"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore ha dimensione  {len(largest)}\n", color="green"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"La componente connessa maggiore in ordine ALFABETICO \n", color="green"))
+
+        for titolo, numero_brani in details:
+            self._view._txt_result.controls.append(ft.Text(f"{titolo}: {numero_brani} brani"))
         self._view.update_page()
 
 

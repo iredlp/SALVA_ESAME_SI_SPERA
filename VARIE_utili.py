@@ -5,9 +5,44 @@ import networkx as nx
 from requests.utils import prepend_scheme_if_needed
 #from database.DAO import DAO
 
-def getRandomNode(self):
+# Numero nodi
+self._grafo.number_of_nodes()
+
+# Numero archi
+self._grafo.number_of_edges()
+
+# Grado massimo
+max(self._grafo.nodes,
+    key=lambda x: self._grafo.degree(x))
+
+# Grado pesato
+self._grafo.degree(x, weight="weight")
+
+# Vicini
+self._grafo.neighbors(x)
+
+# Peso arco
+self._grafo[a][b]["weight"]
+
+# Verifica arco
+self._grafo.has_edge(a, b)
+
+# Componenti connesse
+nx.connected_components(self._grafo)
+
+# Ordinamento
+sorted(lista, key=lambda x: x...)
+
+    def getRandomNode(self):
     index = random.randint(0, len(self._teams) - 1)
     return self._teams[index]
+
+    def getAllNodes(self, genere):
+        return DAO.getAllNodes(genere)
+
+    def getProdottoById(self, idP):
+        return self._idMapA[int(idP)]
+
 
 #PER RESTITUIRE UN INT
 @staticmethod
