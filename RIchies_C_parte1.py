@@ -1,5 +1,5 @@
 import flet as ft
-ì
+
 
 #1) I 5 nodi col maggiore numero di archi uscenti col numero di archi uscenti ed il peso complessivo di
 #questi archi (la somma dei loro pesi). I nodi devono essere stampati in ordine decrescente per
