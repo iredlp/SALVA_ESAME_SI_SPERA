@@ -289,7 +289,6 @@ GIUGNO 2025--> K E M
 Partendo dal grafo costruito nel punto precedente, si vuole identificare il “sotto-campionato più emozionante” di K
 gare che statisticamente presentano il maggior numero di “imprevisti”. Ai fini di questo punto, si considerino come
 circuiti validi solamente i circuiti che appartengono alla componente connessa identificata nel punto precedente e
-03FYZ – Tecniche di programmazione
 nei quali si è corso almeno M volte nel range di anni selezionato. I valori di K ed M sono forniti dall’utente tramite
 appositi textFields (“Soglia” e “Num di Edizioni” rispettivamente) .
 Si definisca come indice di “imprevedibilità” I di una specifica gara il seguente valore numerico:
@@ -778,7 +777,7 @@ Nella realizzazione del codice, si lavori
 
             if score <self._best_score:
                 self._best_score = score
-                self._best_group = list(parziale)
+                self._best_path = list(parziale)
             return
 
         # Se non restano abbastanza costruttori, termino
@@ -893,6 +892,400 @@ Nella realizzazione del codice, si lavori
 
             self._view._txt_result.controls.append(
                 ft.Text(f"Veterano più giovane: {piu_giovane.name}")   )
+        self._view.update_page()
+
+GIUGNO 2026 --A
+L’utente seleziona da un menù a tendina un cliente sorgente tra quelli presenti nel grafo creato al punto 1.
+b. Premendo il pulsante “Trova sequenza clienti”, l’applicazione deve trovare un cammino semplice nel grafo a
+partire dal cliente selezionato, soggetto ai seguenti vincoli:
+- il cammino deve essere di lunghezza massima (numero di archi) tra quelli che rispettano i vincoli successivi;
+- il fatturato totale dei clienti visitati lungo il cammino deve essere decrescente: per ogni arco da C_i a
+C_{i+1}, il fatturato di C_{i+1} deve essere <= del fatturato di C_i;
+c. L’applicazione visualizza:
+- la lista ordinata di clienti che compongono il cammino;
+- per ciascun cliente, il fatturato totale;
+- il numero di archi del cammino e il fatturato complessivo (somma dei fatturati dei clienti nel cammino).
+
+        def getAllNodes(self, genere):
+        return DAO.getAllNodes(genere)
+    def getProdottoById(self, idP):
+        return self._idMapA[int(idP)
+
+     def getGruppoClienti(self, start_node):
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        parziale = [start_node]
+        score = start_node.fatturato
+
+        #self._ricorsione(parziale,  score)
+        self._ricorsione(parziale, 0,)
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, score):
+        ultimo = parziale[-1]
+        # Controllo se il percorso attuale è migliore
+        if len(parziale) > len(self._best_path): #massimizzare il numero di archi.
+            self._best_path = list(parziale)
+            self._best_score = score
+
+        # Caso terminale: abbiamo raggiunto la lunghezza richiesta
+        # if len(parziale) == k:
+        # if ultimo == end_node:
+       # if score < self._best_score: #QUESTA MINIMIZZA IL FATTURATO COMPLESSIVO
+           # self._best_score = score
+          #  self._best_path = list(parziale)
+
+        # Esploro i vicini raggiungibili con un arco uscente
+        for vicino in self._grafo.successors(ultimo):
+
+            # Non posso visitare due volte lo stesso nodo
+            if vicino not in parziale:
+                # Il fatturato deve essere decrescente
+                if vicino.fatturato <= ultimo.fatturato:
+                    # Recupero il peso dell'arco
+               # peso = self._grafo[ultimo][vicino]["weight"]
+                # I pesi devono essere strettamente decrescenti
+               # if ultimo_peso is None or peso <= ultimo_peso:
+                    # Aggiungo il vicino al percorso
+                    parziale.append(vicino)
+                    # Continuo la ricorsione aggiornando il punteggio
+                    self._ricorsione(parziale, score + vicino.fatturato)
+                    # Tolgo il vicino per provare un'altra possibilità
+                    parziale.pop()
+        CONTROLLER:
+
+
+    def handleSequenza(self,e):
+        self._view._txt_result.controls.clear()
+        if self._model.get_num_nodes() == 0 :
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+        start = self._model.getProdottoById(self._view._ddClienti.value)
+        # end = self._model.getProdottoById(self._view._ddProdEnd.value)
+        # qui dovremmo fare i solti controlli sulla validità
+
+        if start is None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire i nodi iniziali   per procedere!", color="red")
+            )
+            self._view.update_page()
+            return
+
+        # Calcolo il percorso di peso massimo
+        percorso, peso = self._model.getGruppoClienti(start)
+
+        # Visualizzo il risultato
+        self._view._txt_result.controls.append(
+            ft.Text("Percorso :", weight="bold", color="orange"))
+
+        for i in range(len(percorso)):
+            self._view._txt_result.controls.append(
+                ft.Text(f"Ordine {percorso[i].CustomerId} - " f" {percorso[i].fatturato}"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Lunghezza percorso trovato:{len(percorso)-1}", color="green")
+            #metto il -1 PK CHIEDE IL NUMERO DI ARCHI
+        )
+        self._view._txt_result.controls.append(
+            ft.Text(f"Fatturato totale: {peso}", color="green")
+        )
+     #   fatturato_tot=0.0
+      #  for f in percorso:
+       #     fatturato_tot += f.fatturato
+       # self._view._txt_result.controls.append(
+         #   ft.Text(f"Fattturato totale:{fatturato_tot}", color="green")  )
+
+        self._view.update_page()
+
+GIUNGO 2026 --B
+L'utente seleziona da un menù a tendina un album di partenza tra quelli presenti nel grafo
+costruito al punto 1.
+b. Premendo il pulsante "Trova selezione", l'applicazione deve determinare, mediante algoritmo
+ricorsivo, un insieme di album che soddisfi i seguenti vincoli:
+• Il totale degli album deve essere pari ad N, valore intero fornito dall’utente tramite apposito
+textField;
+• ogni album selezionato deve appartenere a una componente connessa diversa rispetto agli
+altri album selezionati;
+• il primo album della selezione deve essere l'album scelto dall'utente;
+c. Tra tutte le selezioni ammissibili, l'applicazione deve individuare quella che massimizza il numero
+complessivo di brani, calcolato come somma delle cardinalità delle liste di brani associate agli
+album selezionati.
+d. L'applicazione visualizza:
+• la lista (ordinata per titolo) degli album selezionati;
+• per ciascun album, l’ID del genere ed il numero di brani dell'album;
+• il numero totale di album selezionati;
+• il numero complessivo di brani ottenuto dalla selezione.
+
+          def getGruppoAlbum(self, k, start_node):
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        parziale = [start_node]
+        score = len(start_node.list_brani)
+        self._creaMappaComponenti()
+
+        costruttori = list(self._grafo.nodes)
+
+        self._ricorsione(parziale,costruttori, k, score, 0)
+
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, costruttori,k, score, pos):
+        print("Entro nella ricorsione:", len(parziale), k, pos)
+        if len(parziale) == k:
+           # score = self._score(parziale)
+          #  score = sum(len(a.list_brani) for a in parziale)
+
+            if score >self._best_score:
+                self._best_score = score
+                self._best_path = list(parziale)
+            return
+
+        # Se non restano abbastanza costruttori, termino
+        if len(costruttori) - pos < k - len(parziale):
+            return
+
+        # Provo i costruttori a partire dalla posizione pos
+        for i in range(pos, len(costruttori)):
+            candidato = costruttori[i]
+
+            # Controllo che non ci sia già un costruttore
+            # della stessa componente nella soluzione parziale
+            stessa_componente = False
+
+            for costruttore in parziale:
+                if (self._mappaComponenti[candidato] == self._mappaComponenti[costruttore]):
+                    stessa_componente = True
+                    break
+
+            if stessa_componente:
+                continue
+
+            parziale.append(candidato)
+            self._ricorsione(parziale, costruttori,k, score + len(candidato.list_brani), i+1)
+            parziale.pop()
+
+    def _creaMappaComponenti(self):
+        self._mappaComponenti = {}
+
+       # grafoNonOrientato = self._grafo.to_undirected()
+        componenti = list(nx.connected_components(self._grafo))
+
+        for i, componente in enumerate(componenti):
+            for costruttore in componente:
+                self._mappaComponenti[costruttore] = i
+
+#CONTROLLER:
+         def handleSelezione(self,e):
+        self._view._txt_result.controls.clear()
+        if self._model.get_num_nodes() == 0 :
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+        k = self._view._txtInN.value
+        # qui dovremmo fare i solti controlli sulla validità
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red"))
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "La soglia deve essere un intero positivo.", color="red")
+            return
+
+        start = self._model.getProdottoById(self._view._ddAlbum.value)
+        # end = self._model.getProdottoById(self._view._ddProdEnd.value)
+        # qui dovremmo fare i solti controlli sulla validità
+
+        if start is None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire i nodi iniziali   per procedere!", color="red") )
+            self._view.update_page()
+            return
+
+        gruppo, punteggio = self._model.getGruppoAlbum(kInt, start)
+        gruppo.sort(key=lambda x: x.Title)  # ORDINE ALFABETICO!
+        if len(gruppo) < kInt:
+            self._view._txt_result.controls.append(
+                ft.Text("Non esiste una selezione valida di K artisti."))
+            self._view.update_page()
+            return
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"numero totale di ALBUM selezionati: {len(gruppo)}"))
+
+        for prodotto in gruppo:
+            self._view._txt_result.controls.append(
+                ft.Text(
+                    f"{prodotto.Title} - "
+                    f" che compare in {len(prodotto.list_brani)} brani"))
+
+        tot = 0
+        for prodotto in gruppo:
+            tot += len(prodotto.list_brani)
+
+        self._view._txt_result.controls.append(ft.Text(
+            f"Totale di brani della soluzione ottime: {tot}"))
+
+        self._view.update_page()
+
+
+GIUGNO 2026 --C
+L'utente seleziona da un menù a tendina un artista di partenza tra quelli presenti nel grafo
+costruito al punto 1.
+b. L'utente inserisce in un apposito TextField un valore intero positivo N.
+c. Premendo il pulsante "Trova gruppo artisti", l'applicazione deve determinare, mediante
+algoritmo ricorsivo, un insieme di artisti che soddisfi i seguenti vincoli:
+• il gruppo deve contenere esattamente N artisti;
+• il primo artista del gruppo deve essere quello scelto dall'utente;
+• ogni artista aggiunto dopo il primo deve essere adiacente ad almeno uno degli artisti già
+presenti nel gruppo;
+• non possono comparire nel gruppo due artisti collegati da un arco di peso 1;
+• tra tutte le soluzioni ammissibili, occorre trovare quella che massimizza la somma del
+numero totale di brani degli artisti selezionati.
+d. L'applicazione visualizza:
+• la lista degli artisti selezionati, ordinata alfabeticamente;
+• per ciascun artista, il numero di brani e il numero di playlist distinte in cui compare;
+• il numero totale di artisti selezionati;
+• il numero complessivo di brani della soluzione ottima.
+
+        def getProdottoById(self, idP):
+        return self._idMapA[int(idP)]
+
+
+
+      #  return self._best_path, self._best_score
+    def getGruppoArtisti(self, k, start_node):
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        parziale = [start_node]
+        score = len(start_node.list_brani)
+
+        self._ricorsione(parziale, k, score)
+
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, k, score):
+        # CASO TERMINALE
+        if len(parziale) == k:
+            if score > self._best_score:
+                self._best_score = score
+                self._best_path = list(parziale)
+            return
+
+        # CONSIDERO TUTTI I NODI
+        for vicino in self._grafo.nodes:
+
+            if vicino not in parziale:
+
+                # Verifico che sia adiacente ad almeno un artista già selezionato
+                adiacente = False
+
+                for a in parziale:
+                    if self._grafo.has_edge(a, vicino):
+                        adiacente = True
+
+                # Verifico che non ci siano archi di peso 1
+                valido = True
+
+                for a in parziale:
+                    if self._grafo.has_edge(a, vicino):
+                        if self._grafo[a][vicino]["weight"] == 1:
+                            valido = False
+
+                if adiacente and valido:
+                    parziale.append(vicino)
+                    self._ricorsione(  parziale,  k,  score + len(vicino.list_brani) )
+                    parziale.pop()
+
+    def _ricorsione2(self, parziale, k,score):
+        ultimo = parziale[-1]
+
+        # Caso terminale: abbiamo raggiunto la lunghezza richiesta
+        if len(parziale) == k:
+
+            if score > self._best_score:
+                self._best_score = score
+                self._best_path = list(parziale)
+            return
+
+        # Se arriviamo alla destinazione troppo presto, ci fermiamo
+       # if ultimo == end_node:
+           # return
+
+        # Esploro i vicini raggiungibili con un arco uscente
+        for vicino in self._grafo.neighbors(ultimo):
+
+            # Non posso visitare due volte lo stesso nodo
+            if vicino not in parziale:
+                # Recupero il peso dell'arco
+                peso = self._grafo[ultimo][vicino]["weight"]
+
+                # Aggiungo il vicino al percorso
+                parziale.append(vicino)
+                # Continuo la ricorsione aggiornando il punteggio
+                self._ricorsione(parziale, k,  score + peso)
+                # Tolgo il vicino per provare un'altra possibilità
+                parziale.pop()
+
+    CONTROLLER:
+     def handleSelezione(self,e):
+        self._view._txt_result.controls.clear()
+        if self._model.get_num_nodes() == 0 or self._model.get_num_edges() is None:
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+
+        k = self._view._txtInN.value
+        # qui dovremmo fare i solti controlli sulla validità
+        try:
+            kInt = int(k)
+        except Exception as ex:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire un intero per procedere: {ex}", color="red"))
+            self._view.update_page()
+            return
+        if kInt <= 0:
+            self._view.create_alert(
+                "La soglia deve essere un intero positivo.", color="red")
+            return
+
+        start = self._model.getProdottoById(self._view._ddArtista.value)
+        #end = self._model.getProdottoById(self._view._ddProdEnd.value)
+        # qui dovremmo fare i solti controlli sulla validità
+
+        if start is None :
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire i nodi iniziali   per procedere!", color="red")
+            )
+            self._view.update_page()
+            return
+
+        gruppo, punteggio = self._model.getGruppoArtisti(kInt, start)
+        gruppo.sort(key=lambda x: x.Name) #ORDINE ALFABETICO!
+        if len(gruppo) < kInt:
+            self._view._txt_result.controls.append(
+                ft.Text("Non esiste una selezione valida di K artisti."))
+            return
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"numero totale di artisti selezionati: {len(gruppo)}"))
+
+        for prodotto in gruppo:
+            self._view._txt_result.controls.append(
+                ft.Text(
+                    f"{prodotto.Name} - "
+                    f" che compare in {len(prodotto.list_playlist)} playlist e {len(prodotto.list_brani)} brani") )
+        tot=0
+        for prodotto in gruppo:
+            tot+=len(prodotto.list_brani)
+
+        self._view._txt_result.controls.append( ft.Text(
+                    f"Totale di brani della soluzione ottime: {tot}"))
+
         self._view.update_page()
 
 
