@@ -1379,11 +1379,74 @@ crescente.
        # self._view._txt_result.controls.append(
          #   ft.Text(f"Fattturato totale:{fatturato_tot}", color="green")  )
 
-        self._view.update_page()
+        self._view.update_page
+
+SIMULAZIONE 12 (no DB ESAME)----
+a. Facendo click sul pulsante “Cerca percorso”, individuare il percorso più lungo dato il grafo costruito al punto
+1.
+b. Trovare un cammino semplice di lunghezza massima tale che ogni nodo successivo abbia un età
+strettamente decrescente.
+
+        def getCammino(self):
+    self._best_path = []
+    self._best_score = float("-inf")
+
+     for nodo in self._grafo.nodes:
+        parziale = [nodo]
+   # parziale = [start_node]
+    score = 0
+
+    self._ricorsione(parziale, score)
+
+    return self._best_path, self._best_score
 
 
+def _ricorsione(self, parziale, score):
+    ultimo = parziale[-1]
 
+    # Controllo se il cammino attuale è migliore
+    if len(parziale) > len(self._best_path):
+        self._best_path = list(parziale)
+        self._best_score = score
 
+    # Esploro i vicini
+    for vicino in self._grafo.neighbors(ultimo):
 
+        # Non posso visitare due volte lo stesso nodo
+        if vicino not in parziale:
 
+            # L'età deve essere strettamente decrescente
+            if (ultimo.date_of_birth is not None
+                    and vicino.date_of_birth is not None
+                    and vicino.date_of_birth > ultimo.date_of_birth):
 
+                # Aggiungo il vicino
+                parziale.append(vicino)
+
+                # Continuo la ricorsione
+                self._ricorsione(parziale, score + 1)
+
+                # Backtracking
+                parziale.pop()
+
+    CONTROLLER:
+    percorso, lunghezza = self._model.getCammino()
+
+    self._view._txt_result.controls.append(
+        ft.Text(f"Lunghezza cammino: {lunghezza}")
+    )
+
+    self._view._txt_result.controls.append(
+        ft.Text(f"Numero nodi: {len(percorso)}")
+    )
+
+    self._view._txt_result.controls.append(
+        ft.Text("Percorso trovato:")
+    )
+
+    for nodo in percorso:
+        self._view._txt_result.controls.append(
+            ft.Text(f"{nodo.name} - Data di nascita: {nodo.date_of_birth}")
+        )
+
+    self._view.update_page()
