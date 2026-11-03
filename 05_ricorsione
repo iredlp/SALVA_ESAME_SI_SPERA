@@ -1289,6 +1289,99 @@ d. L'applicazione visualizza:
         self._view.update_page()
 
 
+SIMULAZIONE 11 ---
+Selezionare dal corrispondente menu a tendina un artista. Popolare il menu a tendina con artisti del genere
+selezionato dal menu a tendina del genere del punto 1.
+b. Facendo click sul pulsante “Cerca percorso”, individuare il percorso più lungo.
+c. Trovare un cammino semplice di lunghezza massima tale che ogni arco successivo abbia peso strettamente
+crescente.
+
+     def getGruppoClienti(self, start_node):
+        self._best_path = []
+        self._best_score = float("-inf")
+
+        parziale = [start_node]
+        score = start_node.fatturato
+
+        #self._ricorsione(parziale,  score)
+        self._ricorsione(parziale, 0,)
+        return self._best_path, self._best_score
+
+    def _ricorsione(self, parziale, score):
+        ultimo = parziale[-1]
+        # Controllo se il percorso attuale è migliore
+        if len(parziale) > len(self._best_path): #massimizzare il numero di archi.
+            self._best_path = list(parziale)
+            self._best_score = score
+
+        # Caso terminale: abbiamo raggiunto la lunghezza richiesta
+        # if len(parziale) == k:
+        # if ultimo == end_node:
+       # if score < self._best_score: #QUESTA MINIMIZZA IL FATTURATO COMPLESSIVO
+           # self._best_score = score
+          #  self._best_path = list(parziale)
+
+        # Esploro i vicini raggiungibili con un arco uscente
+        for vicino in self._grafo.successors(ultimo):
+
+            # Non posso visitare due volte lo stesso nodo
+            if vicino not in parziale:
+                # Il fatturato deve essere CRESCENTE
+                if vicino.fatturato >= ultimo.fatturato:
+                    # Recupero il peso dell'arco
+               # peso = self._grafo[ultimo][vicino]["weight"]
+                # I pesi devono essere strettamente decrescenti
+               # if ultimo_peso is None or peso <= ultimo_peso:
+                    # Aggiungo il vicino al percorso
+                    parziale.append(vicino)
+                    # Continuo la ricorsione aggiornando il punteggio
+                    self._ricorsione(parziale, score + vicino.fatturato)
+                    # Tolgo il vicino per provare un'altra possibilità
+                    parziale.pop()
+    CONTROLLER:
+     def handleSequenza(self,e):
+        self._view._txt_result.controls.clear()
+        if self._model.get_num_nodes() == 0 :
+            self._view.create_alert("Creare prima il grafo!", color="red")
+            return
+        start = self._model.getProdottoById(self._view._ddClienti.value)
+        # end = self._model.getProdottoById(self._view._ddProdEnd.value)
+        # qui dovremmo fare i solti controlli sulla validità
+
+        if start is None:
+            self._view._txt_result.controls.append(
+                ft.Text(f"Errore ! devi inserire i nodi iniziali   per procedere!", color="red")
+            )
+            self._view.update_page()
+            return
+
+        # Calcolo il percorso di peso massimo
+        percorso, peso = self._model.getGruppoClienti(start)
+
+        # Visualizzo il risultato
+        self._view._txt_result.controls.append(
+            ft.Text("Percorso :", weight="bold", color="orange"))
+
+        for i in range(len(percorso)):
+            self._view._txt_result.controls.append(
+                ft.Text(f"Ordine {percorso[i].CustomerId} - " f" {percorso[i].fatturato}"))
+
+        self._view._txt_result.controls.append(
+            ft.Text(f"Lunghezza percorso trovato:{len(percorso)-1}", color="green")
+            #metto il -1 PK CHIEDE IL NUMERO DI ARCHI
+        )
+        self._view._txt_result.controls.append(
+            ft.Text(f"Fatturato totale: {peso}", color="green")
+        )
+     #   fatturato_tot=0.0
+      #  for f in percorso:
+       #     fatturato_tot += f.fatturato
+       # self._view._txt_result.controls.append(
+         #   ft.Text(f"Fattturato totale:{fatturato_tot}", color="green")  )
+
+        self._view.update_page()
+
+
 
 
 
